@@ -1,14 +1,11 @@
 <div align="center">
-  <br>
-  <a href="https://proskive.de/"><img src="https://gitlab.proskive.de/tschneider/proskive-bio-images/-/raw/master/img/proskive-bio-logo.png" alt="ProSkive-Bio" width="400"></a>
-  <br>
-  <b>ProSkive-Bio</b>
+  <b>APProVe</b>
   <br>
 </div>
 <br>
 <br>
 
-ProSkive-Bio is a software developed by the Interdisciplinary Biomaterials and Database Frankfurt (iBDF) for easy application of biosamples and clinical data for research projects. It enables researchers and employees of the iBDF to clearly manage and track project requests to the biobank and maps the complete process from application submission to sample distribution and project completion. 
+APProVe is a software developed by the Interdisciplinary Biomaterials and Database Frankfurt (iBDF) for easy application of biosamples and clinical data for research projects. It enables researchers and employees of the iBDF to clearly manage and track project requests to the biobank and maps the complete process from application submission to sample distribution and project completion. 
 
 [[_TOC_]]
 
@@ -18,7 +15,7 @@ ProSkive-Bio is a software developed by the Interdisciplinary Biomaterials and D
 
 <p align="center">
   <a href="#">
-    <img src="https://gitlab.proskive.de/tschneider/proskive-bio-images/-/raw/master/img/workflow-proskive.png"
+    <img src="https://gitlab.proskive.de/tschneider/APProVe-images/-/raw/master/img/workflow-proskive.png"
          alt="Gitter">
   </a>
 </p>
@@ -30,7 +27,7 @@ ProSkive-Bio is a software developed by the Interdisciplinary Biomaterials and D
 
 ## Funktionen
 
-ProSkive-Bio ist die erste Software, die den Beantragungsprozess und die weitere Nachverfolgung von Projekten für alle Beteiligte digital und transparent abbildet. Folgende Funktionen sind bisher integriert:
+APProVe ist die erste Software, die den Beantragungsprozess und die weitere Nachverfolgung von Projekten für alle Beteiligte digital und transparent abbildet. Folgende Funktionen sind bisher integriert:
 1.	online Einreichung von Projektanträgen
 2.	Nutzbezogener Zugriff/Einsicht auf/von Projekte/n
 3.	Übersicht über alle Projekte an denen ein Nutzer als Projektleiter oder Kooperationsleiter beteiligt ist
@@ -46,10 +43,10 @@ To run this application, you'll need [Docker](https://docker.com) installed on y
 
 ```bash
 # 1. Clone this repository
-$ git clone https://gitlab.proskive.de/tschneider/proskive-bio-images
+$ git clone https://gitlab.proskive.de/tschneider/APProVe-images
 
 # 2. Go into the repository
-$ cd proskive-bio-images
+$ cd APProVe-images
 
 # 3. Adjust .env file to your preferences
 $ sudo nano .env
@@ -63,7 +60,7 @@ $ http://localhost:$FRONTEND_PORT
 
 
 ## Configuration
-ProSkive-Bio is configured solely through environment variables.
+APProVe is configured solely through environment variables.
 
 ```bash
 #---------------------------------------------------------------------------------------------------------
@@ -71,20 +68,20 @@ ProSkive-Bio is configured solely through environment variables.
 KEYCLOAK_IMAGE=jboss/keycloak:11.0.0
 MONGO_IMAGE=mongo:3.6
 POSTGRES_IMAGE=postgres:9.6-alpine
-# ==== ProSkive-Bio Images ====
+# ==== APProVe Images ====
 # If you want to update a specific Image, just replace them here in the .env
-CONFIG_IMAGE=registry.gitlab.proskive.de/tschneider/proskive-bio-images/uct-config-service:1.2.0
-EUREKA_IMAGE=registry.gitlab.proskive.de/tschneider/proskive-bio-images/uct-eureka-service:1.4.0
-BACKEND_IMAGE=registry.gitlab.proskive.de/tschneider/proskive-bio-images/uct-backend-service:0.16.0
-FRONTEND_IMAGE=registry.gitlab.proskive.de/tschneider/proskive-bio-images/uct-frontend-service:0.16.0
-USER_IMAGE=registry.gitlab.proskive.de/tschneider/proskive-bio-images/uct-user-service:1.0.0
-ARCHIVE_IMAGE=registry.gitlab.proskive.de/tschneider/proskive-bio-images/uct-archive-service:1.0.0
-COMMENT_IMAGE=registry.gitlab.proskive.de/tschneider/proskive-bio-images/uct-comment-service:1.0
-NOTIFICATION_IMAGE=registry.gitlab.proskive.de/tschneider/proskive-bio-images/uct-notification-service:0.9.1
-DRAFT_IMAGE=registry.gitlab.proskive.de/tschneider/proskive-bio-images/uct-draft-service:0.5
-AUTOMATIOM_IMAGE=registry.gitlab.proskive.de/tschneider/proskive-bio-images/uct-automation-service:1.0
-GATEWAY_IMAGE=registry.gitlab.proskive.de/tschneider/proskive-bio-images/uct-gateway-service:0.0.1
-MANUAL_IMAGE=registry.gitlab.proskive.de/tschneider/proskive-bio-images/uct-manual-service:latest
+CONFIG_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-config-service:1.2.0
+EUREKA_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-eureka-service:1.4.0
+BACKEND_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-backend-service:0.16.0
+FRONTEND_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-frontend-service:0.16.0
+USER_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-user-service:1.0.0
+ARCHIVE_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-archive-service:1.0.0
+COMMENT_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-comment-service:1.0
+NOTIFICATION_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-notification-service:0.9.1
+DRAFT_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-draft-service:0.5
+AUTOMATIOM_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-automation-service:1.0
+GATEWAY_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-gateway-service:0.0.1
+MANUAL_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-manual-service:latest
 
 #---------------------------------------------------------------------------------------------------------
 # ==== Postgres Variables ====
@@ -107,7 +104,7 @@ PROSKIVE_KEYCLOAK_URL=https://subdomain1.your-domain.com/auth
 
 #---------------------------------------------------------------------------------------------------------
 # ==== Frontend URL ====
-# ProSkive-Bio is best used with 3 subdomains. 
+# APProVe is best used with 3 subdomains. 
 # One for Keycloak, one for the frontend and one for the API-Gateway.
 PROSKIVE_SELF_URL=https://subdomain2.your-domain.com
 
@@ -153,7 +150,7 @@ MANUAL_PORT=8585
 
 ## Reverse Proxy
 To be accessible from the outside world, a domain and at least 3 subdomains are required. 
-This guide explains the steps using [NGINX](https://www.nginx.com/) and [Certbot](https://certbot.eff.org/) to encrypt ProSkive-Bio with SSL and to set up a reverse proxy to 
+This guide explains the steps using [NGINX](https://www.nginx.com/) and [Certbot](https://certbot.eff.org/) to encrypt APProVe with SSL and to set up a reverse proxy to 
 make the docker containers accessible.
 
 <p>For this we look at 3 NGINX configuration files.
@@ -314,7 +311,7 @@ Web Origins: "+"<br>
 It should look like this:
 <p align="center">
   <a href="#">
-    <img src="https://gitlab.proskive.de/tschneider/proskive-bio-images/-/raw/master/img/keycloak-client.png"
+    <img src="https://gitlab.proskive.de/tschneider/APProVe-images/-/raw/master/img/keycloak-client.png"
          alt="keycloak-client">
   </a>
 </p>
@@ -324,7 +321,7 @@ Now you should add your first user! <br>
 Go to Manage -> Users -> Add User and set a credential
 ```
 
-Before you can finally login in ProSkive-BIO you should add two roles as well. <br>
+Before you can finally login in APProVe you should add two roles as well. <br>
 
 ```bash
 Go to Configure -> Roles -> Add Role
@@ -341,7 +338,7 @@ The user must have the name "KEYCLOAK_USER_NAME" and password "KEYCLOAK_USER_PAS
 This user needs a specific Client-Role -> realm-admin.
 <p align="center">
   <a href="#">
-    <img src="https://gitlab.proskive.de/tschneider/proskive-bio-images/-/raw/master/img/service-user.png"
+    <img src="https://gitlab.proskive.de/tschneider/APProVe-images/-/raw/master/img/service-user.png"
          alt="service-user">
   </a>
 </p>
@@ -360,6 +357,3 @@ This software uses the following open source packages:
 - [jQuery.js](https://jquery.com/)
 - [Bootstrap](https://getbootstrap.com/)
 - [Keycloak](https://www.keycloak.org/about)
-
-## License
-MIT
