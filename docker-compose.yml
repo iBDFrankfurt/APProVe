@@ -1,14 +1,14 @@
 version: '3'
 #---------------------------------------------------------------------------------------------------------
 # ==== Upgrading ProSkive-Bio to new version =====
-# 1) Stop ProSkive-Bio:
+# 1) Stop APProVe:
 #      docker-compose down
 # 2) Change image version in docker-compose.yml file:
 #       For example in auth => image: jboss/keycloak:11.0.0 --> image: jboss/keycloak:11.0.1
 #       save file
 # 2) Download new version:
 #      docker-compose pull
-# 3) Start ProSkive-Bio:
+# 3) Start APProVe:
 #      docker-compose up -d
 # ----------------------------------------------------------------------------------
 # ==== USAGE OF THIS docker-compose.yml ====
@@ -18,6 +18,8 @@ version: '3'
 #     docker ps
 # 3) Stop Docker containers:
 #     docker-compose down
+# 3) Update Docker containers:
+#     docker-compose pull && docker-compose up -d
 services:
   auth:
     #-------------------------------------------------------------------------------------
@@ -30,13 +32,21 @@ services:
       - 8080:8080
       - ${AUTH_PORT}:8443
     environment:
-      DB_ADDR: proskive.postgres
-      DB_DATABASE: ${PROSKIVE_AUTH_DB}
-      DB_USER: ${PROSKIVE_POSTGRES_USER}
-      DB_PASSWORD: ${PROSKIVE_POSTGRES_PASSWORD}
-      KEYCLOAK_USER: ${PROSKIVE_KEYCLOAK_ADMIN_USER}
-      KEYCLOAK_PASSWORD: ${PROSKIVE_KEYCLOAK_ADMIN_PASSWORD}
+      DB_ADDR: approve.postgres
+      DB_DATABASE: ${APPROVE_AUTH_DB}
+      DB_USER: ${APPROVE_POSTGRES_USER}
+      DB_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
+      KEYCLOAK_USER: ${APPROVE_KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_PASSWORD: ${APPROVE_KEYCLOAK_ADMIN_PASSWORD}
       JAVA_OPTS: " -XX:-UseGCOverheadLimit -Xms2048m -Xmx2048m -XX:MetaspaceSize=200M -XX:MaxMetaspaceSize=256m -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true"
+      REST_USER: ${KEYCLOAK_USER_NAME}
+      REST_PASSWORD: ${KEYCLOAK_USER_PASSWORD}
+      CLIENT_ID: ${KEYCLOAK_REST_CLIENT_ID}
+      GRANT_TYPE: password
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM_NAME}
+      KEYCLOAK_URL: ${APPROVE_KEYCLOAK_URL}
+      USER_SERVICE_URL: ${APPROVE_USER_URL}
+      BACKEND_SERVICE_URL: ${APPROVE_BACKEND_URL}
     #volumes:
     #-------------------------------------------------------------------------------------
     # ==== Create and add your own login Theme and paste it like this ====
@@ -45,163 +55,165 @@ services:
     depends_on:
       - postgres
     networks:
-      - dockercompose_proskive
+      - approve_network
 
   mongo:
     restart: always
-    container_name: proskive.mongo
+    container_name: approve.mongo
     image: ${MONGO_IMAGE}
     ports:
       - ${MONGO_PORT}:27017
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${PROSKIVE_MONGO_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${PROSKIVE_MONGO_PASSWORD}
+      MONGO_INITDB_ROOT_USERNAME: ${APPROVE_MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${APPROVE_MONGO_PASSWORD}
     volumes:
       - ".mongo_data:/data/db"
     networks:
-      - dockercompose_proskive
+      - approve_network
 
   postgres:
     restart: always
-    container_name: proskive.postgres
+    container_name: approve.postgres
     image: ${POSTGRES_IMAGE}
     expose:
       - ${POSTGRES_PORT}
     ports:
       - ${POSTGRES_PORT}:5432
     environment:
-      POSTGRES_USER: ${PROSKIVE_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${PROSKIVE_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${PROSKIVE_AUTH_DB}
+      POSTGRES_USER: ${APPROVE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${APPROVE_AUTH_DB}
     volumes:
       - ".postgres_data:/var/lib/postgresql/data"
     networks:
-      - dockercompose_proskive
+      - approve_network
 
   config-service:
     restart: always
-    container_name: proskive.config
+    container_name: approve.config
     image: ${CONFIG_IMAGE}
     ports:
       - ${CONFIG_PORT}:8888
     depends_on:
       - eureka-service
     networks:
-      - dockercompose_proskive
+      - approve_network
 
   backend-service:
-    container_name: proskive.backend
+    container_name: approve.backend
     restart: always
     image: ${BACKEND_IMAGE}
     ports:
      - ${BACKEND_PORT}:8000
     environment:
-      PROSKIVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
-      PROSKIVE_KEYCLOAK_SERVER: ${PROSKIVE_KEYCLOAK_URL}
-      PROSKIVE_EUREKA: ${EUREKA_URL}
+      APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
+      APPROVE_EUREKA: ${EUREKA_URL}
       EUREKA_PREFER_IP_ADDRESS: "true"
-      EUREKA_IP_ADDRESS: proskive.backend
+      EUREKA_IP_ADDRESS: approve.backend
       INSTANCE_HOSTNAME: PROJECT-SERVICE
-      POSTGRES_USER: ${PROSKIVE_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${PROSKIVE_POSTGRES_PASSWORD}
-      POSTGRES_URL: proskive.postgres
+      POSTGRES_USER: ${APPROVE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
+      POSTGRES_URL: approve.postgres
       POSTGRES_PORT: ${POSTGRES_PORT}
-      EUREKA_URL: proskive.eureka
+      EUREKA_URL: approve.eureka
       EUREKA_PORT: ${EUREKA_PORT}
-      CONFIG_URL: proskive.config
+      CONFIG_URL: approve.config
       CONFIG_PORT: ${CONFIG_PORT}
+      APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
+      APPROVE_FRONTEND_URL: ${APPROVE_FRONTEND_URL}
     networks:
-      - dockercompose_proskive
+      - approve_network
 
   frontend-service:
-    container_name: proskive.frontend
+    container_name: approve.frontend
     restart: always
     image: ${FRONTEND_IMAGE}
     ports:
      - ${FRONTEND_PORT}:8001
     environment:
-      PROSKIVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
-      EUREKA_URL: proskive.eureka
+      APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
+      EUREKA_URL: approve.eureka
       EUREKA_PORT: ${EUREKA_PORT}
-      CONFIG_URL: proskive.config
+      CONFIG_URL: approve.config
       CONFIG_PORT: ${CONFIG_PORT}
-      PROSKIVE_KEYCLOAK_SERVER: ${PROSKIVE_KEYCLOAK_URL}
-      PROSKIVE_EUREKA: ${EUREKA_URL}
+      APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
+      APPROVE_EUREKA: ${EUREKA_URL}
       EUREKA_PREFER_IP_ADDRESS: "true"
       EUREKA_IP_ADDRESS: frontend-service
       INSTANCE_HOSTNAME: PROJECT-WEB-SERVICE
-      PROSKIVE_KEYCLOAK_URL: ${PROSKIVE_KEYCLOAK_URL}
-      PROSKIVE_SELF_URL: ${PROSKIVE_SELF_URL}
-      PROSKIVE_BACKEND_URL: ${PROSKIVE_BACKEND_URL}
-      PROSKIVE_NOTIFICATION_URL: ${PROSKIVE_NOTIFICATION_URL}
-      PROSKIVE_ARCHIVE_URL: ${PROSKIVE_ARCHIVE_URL}
-      PROSKIVE_AUTOMATION_URL: ${PROSKIVE_AUTOMATION_URL}
-      PROSKIVE_USER_URL: ${PROSKIVE_USER_URL}
-      PROSKIVE_COMMENTS_URL: ${PROSKIVE_COMMENTS_URL}
-      PROSKIVE_DRAFT_URL: ${PROSKIVE_DRAFT_URL}
-      MANUAL_URL: ${PROSKIVE_MANUAL_URL}
-      FRONTEND_USER_LAYOUT: /css/proskive.css
+      APPROVE_KEYCLOAK_URL: ${APPROVE_KEYCLOAK_URL}
+      APPROVE_SELF_URL: ${APPROVE_FRONTEND_URL}
+      APPROVE_BACKEND_URL: ${APPROVE_BACKEND_URL}
+      APPROVE_NOTIFICATION_URL: ${APPROVE_NOTIFICATION_URL}
+      APPROVE_ARCHIVE_URL: ${APPROVE_ARCHIVE_URL}
+      APPROVE_AUTOMATION_URL: ${APPROVE_AUTOMATION_URL}
+      APPROVE_USER_URL: ${APPROVE_USER_URL}
+      APPROVE_COMMENTS_URL: ${APPROVE_COMMENTS_URL}
+      APPROVE_DRAFT_URL: ${APPROVE_DRAFT_URL}
+      MANUAL_URL: ${APPROVE_MANUAL_URL}
+      FRONTEND_USER_LAYOUT: /css/approve.css
       FRONTEND_ADMIN_LAYOUT: /css/demoProskive.css
       FRONTEND_SB_LAYOUT: /css/scientificBoardProskive.css
-      PROSKIVE_EMAIL_URL: ${PROSKIVE_SELF_URL}
-      PROSKIVE_CONTACT: Dr. Kristina Götze Dipl.-Biochem. , Project Management, University Hospital Frankfurt, Theodor-Stern-Kai 7 60590 Frankfurt, kristina.goetze@kgu.de
+      APPROVE_EMAIL_URL: ${APPROVE_FRONTEND_URL}
+      APPROVE_MAIL_URL: ${APPROVE_MAIL_URL}
+      APPROVE_CONTACT: Dr. Kristina Götze Dipl.-Biochem. , Project Management, University Hospital Frankfurt, Theodor-Stern-Kai 7 60590 Frankfurt, kristina.goetze@kgu.de
     networks:
-     - dockercompose_proskive
+     - approve_network
 
   user-service:
     restart: always
-    container_name: proskive.user
+    container_name: approve.user
     image: ${USER_IMAGE}
     environment:
-      PROSKIVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
-      PROSKIVE_KEYCLOAK_USER_NAME: ${KEYCLOAK_USER_NAME}
-      PROSKIVE_KEYCLOAK_USER_PASSWORD: ${KEYCLOAK_USER_PASSWORD}
-      EUREKA_URL: proskive.eureka
+      APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
+      APPROVE_KEYCLOAK_USER_NAME: ${KEYCLOAK_USER_NAME}
+      APPROVE_KEYCLOAK_USER_PASSWORD: ${KEYCLOAK_USER_PASSWORD}
+      EUREKA_URL: approve.eureka
       EUREKA_PORT: ${EUREKA_PORT}
-      CONFIG_URL: proskive.config
+      CONFIG_URL: approve.config
       CONFIG_PORT: ${CONFIG_PORT}
-      PROSKIVE_EUREKA: ${EUREKA_URL}
+      APPROVE_EUREKA: ${EUREKA_URL}
       INSTANCE_HOSTNAME: USER-SERVICE
       EUREKA_PREFER_IP_ADDRESS: "true"
-      EUREKA_IP_ADDRESS: proskive.user
+      EUREKA_IP_ADDRESS: approve.user
       # General
-      PROSKIVE_KEYCLOAK_SERVER: ${PROSKIVE_KEYCLOAK_URL}
+      APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
     ports:
       - ${USER_PORT}:9001
     networks:
-      - dockercompose_proskive
+      - approve_network
 
   eureka-service:
     restart: always
-    container_name: proskive.eureka
+    container_name: approve.eureka
     image: ${EUREKA_IMAGE}
     ports:
       - ${EUREKA_PORT}:8761
     environment:
-      EUREKA_PORT: 8761
+      EUREKA_PORT: ${EUREKA_PORT}
       CONFIG_PORT: ${CONFIG_PORT}
       CONFIG_URL: config-service
     networks:
-      - dockercompose_proskive
+      - approve_network
 
   archive-service:
     restart: always
-    container_name: proskive.archive
+    container_name: approve.archive
     image: ${ARCHIVE_IMAGE}
     ports:
       - ${ARCHIVE_PORT}:8002
     environment:
       # General
-      EUREKA_URL: proskive.eureka
+      EUREKA_URL: approve.eureka
       EUREKA_PORT: 8761
       MONGODB__CONNECTIONSTRING: ${MONGO_URL}
       MONGODB__DATABASE: archivesdb
       MONGODB__COLLECTIONNAME: archives
-      JWT__AUTHORITY: ${PROSKIVE_KEYCLOAK_URL}/realms/${KEYCLOAK_REALM_NAME}
+      JWT__AUTHORITY: ${APPROVE_KEYCLOAK_URL}/realms/${KEYCLOAK_REALM_NAME}
       EUREKA__CLIENT__SERVICEURL: ${EUREKA_URL}
       # Service
-      MongoDb__Auth__Username: ${PROSKIVE_MONGO_USER}
-      MongoDb__Auth__Password: ${PROSKIVE_MONGO_PASSWORD}
+      MongoDb__Auth__Username: ${APPROVE_MONGO_USER}
+      MongoDb__Auth__Password: ${APPROVE_MONGO_PASSWORD}
       EUREKA__INTANCE__PREFERIPADDRESS: "true"
       EUREKA__INSTANCE__HOSTNAME: ARCHIVE-SERVICE
       EUREKA__INSTANCE__APPNAME: ARCHIVE-SERVICE
@@ -209,84 +221,52 @@ services:
     depends_on:
       - mongo
     networks:
-      - dockercompose_proskive
+      - approve_network
 
   comments-service:
     image: ${COMMENT_IMAGE}
-    container_name: proskive.comment
+    container_name: approve.comment
     ports:
       - ${COMMENT_PORT}:3234
     environment:
-      COMMENTS_PORT: "3234"
+      COMMENTS_PORT: ${COMMENT_PORT}
       COMMENTS_HOST:
       MONGO_PORT: ${MONGO_PORT}
       MONGO_HOST: ${MONGO_URL}
-      MONGO_USERNAME: ${PROSKIVE_MONGO_USER}
-      MONGO_PASSWORD: ${PROSKIVE_MONGO_PASSWORD}
+      MONGO_USERNAME: ${APPROVE_MONGO_USER}
+      MONGO_PASSWORD: ${APPROVE_MONGO_PASSWORD}
       MONGO_AUTH: "true"
       REGISTER_WITH_EUREKA: "true"
       EUREKA_HOST: ${EUREKA_URL}
       EUREKA_SERVICE_NAME: "COMMENTS-SERVICE"
-      CHECK_TOKEN_URL: ${PROSKIVE_KEYCLOAK_URL}/realms/${KEYCLOAK_REALM_NAME}/protocol/openid-connect/userinfo
+      CHECK_TOKEN_URL: ${APPROVE_KEYCLOAK_URL}/realms/${KEYCLOAK_REALM_NAME}/protocol/openid-connect/userinfo
       IS_LOCAL: "false"
     networks:
-      - dockercompose_proskive
+      - approve_network
 
-  notifications-service:
-    restart: always
-    container_name: proskive.notifications
-    image: ${NOTIFICATION_IMAGE}
+  mail-service:
+    image: registry.gitlab.proskive.de/proskive/uct-email-service/master:1.0
     ports:
-      - ${NOTIFICATION_PORT}:9000
+      - ${EMAIL_PORT}:4234
     environment:
-      # General
-      JWT__AUTHORITY: ${PROSKIVE_KEYCLOAK_URL}/realms/${KEYCLOAK_REALM_NAME}
-      EUREKA__INTANCE__PREFERIPADDRESS: "true"
-      EUREKA__INSTANCE__HOSTNAME: notifications-service
-      EUREKA__INSTANCE__APPNAME: NOTIFICATION-SERVICE
-      # Service
-      MONGODB__CONNECTIONSTRING: ${MONGO_URL}
-      MONGODB__DATABASE: notificationsdb
-      MONGODB__COLLECTIONNAME: notifications
-      MongoDb__Auth__Username: ${PROSKIVE_MONGO_USER}
-      MongoDb__Auth__Password: ${PROSKIVE_MONGO_PASSWORD}
-      SMTP__AUTHENTICATION__ENABLED: "false"
-      SMTP__AUTHENTICATION__USERNAME:
-      SMTP__AUTHENTICATION__PASSWORD:
-      SMTP__HOST:
-      SMTP_PORT: 465
-      EUREKA__CLIENT__SERVICEURL: ${EUREKA_URL}
-      EUREKA__INSTANCE__PORT: 9000
-      EUREKA_URL: proskive.eureka
-      EUREKA_PORT: 8761
-      EUREKA__CLIENT__SHOULDFETCHREGISTRY: "false"
-    depends_on:
-      - mongo
-    networks:
-      - dockercompose_proskive
-
-  draft-service:
-    container_name: proskive.draft
-    image: ${DRAFT_IMAGE}
-    ports:
-      - ${DRAFT_PORT}:3232
-    environment:
-      DRAFT_HOST:
-      DRAFT_PORT: 3232
+      MAILS_PORT: ${EMAIL_PORT}
+      MAILS_HOST:
       MONGO_PORT: ${MONGO_PORT}
       MONGO_HOST: ${MONGO_URL}
-      MONGO_USERNAME: ${PROSKIVE_MONGO_USER}
-      MONGO_PASSWORD: ${PROSKIVE_MONGO_PASSWORD}
+      MONGO_USERNAME: ${APPROVE_MONGO_USER}
+      MONGO_PASSWORD: ${APPROVE_MONGO_PASSWORD}
       MONGO_AUTH: "true"
+      REGISTER_WITH_EUREKA: "true"
       EUREKA_HOST: ${EUREKA_URL}
-      EUREKA_SERVICE_NAME: "DRAFT-SERVICE"
-      EUREKA_IP_ADDRESS_FOR_SERVICE: "DRAFT-SERVICE"
-      CHECK_TOKEN_URL: ${PROSKIVE_KEYCLOAK_URL}/realms/${KEYCLOAK_REALM_NAME}/protocol/openid-connect/userinfo
+      EUREKA_SERVICE_NAME: "MAIL-SERVICE"
+      CHECK_TOKEN_URL: ${APPROVE_KEYCLOAK_URL}/realms/${KEYCLOAK_REALM_NAME}/protocol/openid-connect/userinfo
+      IS_LOCAL: "false"
     networks:
-      - dockercompose_proskive
+      - approve_network
+
 
   automation-service:
-    container_name: proskive.automation
+    container_name: approve.automation
     image: ${AUTOMATIOM_IMAGE}
     ports:
       - ${AUTOMATION_PORT}:3233
@@ -295,44 +275,44 @@ services:
       RULES_HOST:
       MONGO_PORT: ${MONGO_PORT}
       MONGO_HOST: ${MONGO_URL}
-      MONGO_USERNAME: ${PROSKIVE_MONGO_USER}
-      MONGO_PASSWORD: ${PROSKIVE_MONGO_PASSWORD}
+      MONGO_USERNAME: ${APPROVE_MONGO_USER}
+      MONGO_PASSWORD: ${APPROVE_MONGO_PASSWORD}
       MONGO_AUTH: "true"
       REGISTER_WITH_EUREKA: "true"
       EUREKA_HOST: ${EUREKA_URL}
       EUREKA_SERVICE_NAME: "AUTOMATION-SERVICE"
       EUREKA_IP_ADDRESS_FOR_SERVICE: "AUTOMATION-SERVICE"
-      CHECK_TOKEN_URL: ${PROSKIVE_KEYCLOAK_URL}/realms/${KEYCLOAK_REALM_NAME}/protocol/openid-connect/userinfo
+      CHECK_TOKEN_URL: ${APPROVE_KEYCLOAK_URL}/realms/${KEYCLOAK_REALM_NAME}/protocol/openid-connect/userinfo
       IS_LOCAL: "false"
     networks:
-      - dockercompose_proskive
+      - approve_network
 
   gateway-service:
-    container_name: proskive.gateway
+    container_name: approve.gateway
     image: ${GATEWAY_IMAGE}
     ports:
       - ${GATEWAY_PORT}:8762
     environment:
-      EUREKA_URL: proskive.eureka
+      EUREKA_URL: approve.eureka
       EUREKA_PORT: ${EUREKA_PORT}
-      CONFIG_URL: proskive.config
+      CONFIG_URL: approve.config
       CONFIG_PORT: ${CONFIG_PORT}
-      PROSKIVE_EUREKA: ${EUREKA_URL}
+      APPROVE_EUREKA: ${EUREKA_URL}
       EUREKA_PREFER_IP_ADDRESS: "true"
       EUREKA_IP_ADDRESS: gateway-service
       INSTANCE_HOSTNAME: gateway-service
     networks:
-     - dockercompose_proskive
+     - approve_network
 
   manual-service:
-    container_name: proskive.manual
+    container_name: approve.manual
     image: ${MANUAL_IMAGE}
     ports:
       - ${MANUAL_PORT}:8585
     networks:
-      - dockercompose_proskive
+      - approve_network
 
 networks:
-  dockercompose_proskive:
+  approve_network:
     external:
-      name: dockercompose_proskive
+      name: approve_network
