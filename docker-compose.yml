@@ -47,11 +47,15 @@ services:
       KEYCLOAK_URL: ${APPROVE_KEYCLOAK_URL}
       USER_SERVICE_URL: ${APPROVE_USER_URL}
       BACKEND_SERVICE_URL: ${APPROVE_BACKEND_URL}
-    #volumes:
+    volumes:
     #-------------------------------------------------------------------------------------
     # ==== Create and add your own login Theme and paste it like this ====
     #-------------------------------------------------------------------------------------
       #- "path/to/your/theme:/opt/jboss/keycloak/themes/"
+    #-------------------------------------------------------------------------------------
+    # ==== Folder needs 1111 as user group rights. 1111 is jboss user for keycloak ====
+    #-------------------------------------------------------------------------------------
+      - "/opt/proskive/keycloak-event-listener/target/:/opt/jboss/keycloak/standalone/deployments/"
     depends_on:
       - postgres
     networks:

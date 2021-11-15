@@ -61,7 +61,7 @@ $ http://localhost:$FRONTEND_PORT
 
 ## Configuration
 APProVe is configured solely through environment variables.
-
+Below is an example currently running on the demo server
 ```bash
 #---------------------------------------------------------------------------------------------------------
 # ==== External Images ====
