@@ -26,7 +26,7 @@ services:
     # ==== Keycloak ====
     #-------------------------------------------------------------------------------------
     restart: always
-    container_name: proskive.auth
+    container_name: approve.auth
     image: ${KEYCLOAK_IMAGE}
     ports:
       - 8080:8080
@@ -38,14 +38,12 @@ services:
       DB_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
       KEYCLOAK_USER: ${APPROVE_KEYCLOAK_ADMIN_USER}
       KEYCLOAK_PASSWORD: ${APPROVE_KEYCLOAK_ADMIN_PASSWORD}
-      JAVA_OPTS: " -XX:-UseGCOverheadLimit -Xms2048m -Xmx2048m -XX:MetaspaceSize=200M -XX:MaxMetaspaceSize=256m -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true"
       REST_USER: ${KEYCLOAK_USER_NAME}
       REST_PASSWORD: ${KEYCLOAK_USER_PASSWORD}
       CLIENT_ID: ${KEYCLOAK_REST_CLIENT_ID}
       GRANT_TYPE: password
       KEYCLOAK_REALM: ${KEYCLOAK_REALM_NAME}
       KEYCLOAK_URL: ${APPROVE_KEYCLOAK_URL}
-      USER_SERVICE_URL: ${APPROVE_USER_URL}
       BACKEND_SERVICE_URL: ${APPROVE_BACKEND_URL}
     volumes:
     #-------------------------------------------------------------------------------------
@@ -53,7 +51,7 @@ services:
     #-------------------------------------------------------------------------------------
       #- "path/to/your/theme:/opt/jboss/keycloak/themes/"
     #-------------------------------------------------------------------------------------
-    # ==== Folder needs 1111 as user group rights. 1111 is jboss user for keycloak ====
+    # ==== Folder needs 777 rights for keycloak: see README====
     #-------------------------------------------------------------------------------------
       - "/opt/proskive/keycloak-event-listener/target/:/opt/jboss/keycloak/standalone/deployments/"
     depends_on:
@@ -110,21 +108,27 @@ services:
     ports:
      - ${BACKEND_PORT}:8000
     environment:
+      # Keycloak variables 
       APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
+      APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
+      # Eureka variables
       APPROVE_EUREKA: ${EUREKA_URL}
       EUREKA_PREFER_IP_ADDRESS: "true"
       EUREKA_IP_ADDRESS: approve.backend
       INSTANCE_HOSTNAME: PROJECT-SERVICE
+      EUREKA_URL: approve.eureka
+      EUREKA_PORT: ${EUREKA_PORT}
+      # Postgres variables
       POSTGRES_USER: ${APPROVE_POSTGRES_USER}
       POSTGRES_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
       POSTGRES_URL: approve.postgres
       POSTGRES_PORT: ${POSTGRES_PORT}
-      EUREKA_URL: approve.eureka
-      EUREKA_PORT: ${EUREKA_PORT}
+      # Config-Service variables
       CONFIG_URL: approve.config
       CONFIG_PORT: ${CONFIG_PORT}
-      APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
+
       APPROVE_FRONTEND_URL: ${APPROVE_FRONTEND_URL}
+      JAVA_OPTS: "-XX:+UseSerialGC -XX:MaxRAM=1024m"
     networks:
       - approve_network
 
@@ -135,32 +139,31 @@ services:
     ports:
      - ${FRONTEND_PORT}:8001
     environment:
+      #Startup Variables
       APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
+      APPROVE_EUREKA: ${EUREKA_URL}
       EUREKA_URL: approve.eureka
       EUREKA_PORT: ${EUREKA_PORT}
       CONFIG_URL: approve.config
       CONFIG_PORT: ${CONFIG_PORT}
       APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
-      APPROVE_EUREKA: ${EUREKA_URL}
-      EUREKA_PREFER_IP_ADDRESS: "true"
-      EUREKA_IP_ADDRESS: frontend-service
-      INSTANCE_HOSTNAME: PROJECT-WEB-SERVICE
       APPROVE_KEYCLOAK_URL: ${APPROVE_KEYCLOAK_URL}
+      # Backend URLS
       APPROVE_SELF_URL: ${APPROVE_FRONTEND_URL}
       APPROVE_BACKEND_URL: ${APPROVE_BACKEND_URL}
-      APPROVE_NOTIFICATION_URL: ${APPROVE_NOTIFICATION_URL}
-      APPROVE_ARCHIVE_URL: ${APPROVE_ARCHIVE_URL}
-      APPROVE_AUTOMATION_URL: ${APPROVE_AUTOMATION_URL}
       APPROVE_USER_URL: ${APPROVE_USER_URL}
       APPROVE_COMMENTS_URL: ${APPROVE_COMMENTS_URL}
-      APPROVE_DRAFT_URL: ${APPROVE_DRAFT_URL}
-      MANUAL_URL: ${APPROVE_MANUAL_URL}
-      FRONTEND_USER_LAYOUT: /css/approve.css
-      FRONTEND_ADMIN_LAYOUT: /css/demoProskive.css
-      FRONTEND_SB_LAYOUT: /css/scientificBoardProskive.css
-      APPROVE_EMAIL_URL: ${APPROVE_FRONTEND_URL}
+      APPROVE_AUTOMATION_URL: ${APPROVE_AUTOMATION_URL}
       APPROVE_MAIL_URL: ${APPROVE_MAIL_URL}
-      APPROVE_CONTACT: Dr. Kristina Götze Dipl.-Biochem. , Project Management, University Hospital Frankfurt, Theodor-Stern-Kai 7 60590 Frankfurt, kristina.goetze@kgu.de
+      MANUAL_URL: ${APPROVE_MANUAL_URL}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: approve.eureka:8761
+      INSTANCE_HOSTNAME: PROJECT-WEB-SERVICE
+      EUREKA_PREFER_IP_ADDRESS: "true"
+      EUREKA_IP_ADDRESS: approve.frontend
+      FRONTEND_USER_LAYOUT: /css/proskive.css
+      FRONTEND_ADMIN_LAYOUT: /css/demoProskive.css
+      FRONTEND_SB_LAYOUT:  /css/scientificBoardProskive.css
+      APPROVE_EMAIL_URL: ${APPROVE_FRONTEND_URL}
     networks:
      - approve_network
 
@@ -170,8 +173,6 @@ services:
     image: ${USER_IMAGE}
     environment:
       APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
-      APPROVE_KEYCLOAK_USER_NAME: ${KEYCLOAK_USER_NAME}
-      APPROVE_KEYCLOAK_USER_PASSWORD: ${KEYCLOAK_USER_PASSWORD}
       EUREKA_URL: approve.eureka
       EUREKA_PORT: ${EUREKA_PORT}
       CONFIG_URL: approve.config
@@ -180,6 +181,8 @@ services:
       INSTANCE_HOSTNAME: USER-SERVICE
       EUREKA_PREFER_IP_ADDRESS: "true"
       EUREKA_IP_ADDRESS: approve.user
+      APPROVE_KEYCLOAK_USER_NAME: ${KEYCLOAK_USER_NAME}
+      APPROVE_KEYCLOAK_USER_PASSWORD: ${KEYCLOAK_USER_PASSWORD}
       # General
       APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
     ports:
@@ -197,33 +200,7 @@ services:
       EUREKA_PORT: ${EUREKA_PORT}
       CONFIG_PORT: ${CONFIG_PORT}
       CONFIG_URL: config-service
-    networks:
-      - approve_network
-
-  archive-service:
-    restart: always
-    container_name: approve.archive
-    image: ${ARCHIVE_IMAGE}
-    ports:
-      - ${ARCHIVE_PORT}:8002
-    environment:
-      # General
-      EUREKA_URL: approve.eureka
-      EUREKA_PORT: 8761
-      MONGODB__CONNECTIONSTRING: ${MONGO_URL}
-      MONGODB__DATABASE: archivesdb
-      MONGODB__COLLECTIONNAME: archives
-      JWT__AUTHORITY: ${APPROVE_KEYCLOAK_URL}/realms/${KEYCLOAK_REALM_NAME}
-      EUREKA__CLIENT__SERVICEURL: ${EUREKA_URL}
-      # Service
-      MongoDb__Auth__Username: ${APPROVE_MONGO_USER}
-      MongoDb__Auth__Password: ${APPROVE_MONGO_PASSWORD}
-      EUREKA__INTANCE__PREFERIPADDRESS: "true"
-      EUREKA__INSTANCE__HOSTNAME: ARCHIVE-SERVICE
-      EUREKA__INSTANCE__APPNAME: ARCHIVE-SERVICE
-      EUREKA__INSTANCE__PORT: 8002
-    depends_on:
-      - mongo
+      JAVA_OPTS: "-XX:+UseSerialGC -XX:MaxRAM=512m"
     networks:
       - approve_network
 
@@ -249,7 +226,7 @@ services:
       - approve_network
 
   mail-service:
-    image: registry.gitlab.proskive.de/proskive/uct-email-service/master:1.0
+    image: ${NOTIFICATION_IMAGE}
     ports:
       - ${EMAIL_PORT}:4234
     environment:
@@ -267,7 +244,6 @@ services:
       IS_LOCAL: "false"
     networks:
       - approve_network
-
 
   automation-service:
     container_name: approve.automation
