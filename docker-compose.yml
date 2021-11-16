@@ -1,6 +1,6 @@
 version: '3'
 #---------------------------------------------------------------------------------------------------------
-# ==== Upgrading ProSkive-Bio to new version =====
+# ==== Upgrading APProVe to new version =====
 # 1) Stop APProVe:
 #      docker-compose down
 # 2) Change image version in docker-compose.yml file:
