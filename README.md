@@ -428,6 +428,13 @@ To activate the spi, you need to enable it via the keycloak admin panel
 To test if it has worked, add a new Role/User in Keycloak and check in the administration of APProVe if the role/user is present. For further information please check our manual which is installed via the docker-compose.yaml
 
 ```
+<p align="center">
+  <a href="#">
+    <img src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/add-keycloak-spi.png"
+         alt="service-user">
+  </a>
+</p>
+
 ## Popular Documentation
 For further information take a look at our [iBDF Wiki](https://ibdf-frankfurt.de/wiki/Hauptseite).
 
