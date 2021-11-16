@@ -60,6 +60,9 @@ services:
       - approve_network
 
   mongo:
+    #-------------------------------------------------------------------------------------
+    # ==== Database for comments/templates/automation ====
+    #-------------------------------------------------------------------------------------
     restart: always
     container_name: approve.mongo
     image: ${MONGO_IMAGE}
@@ -74,6 +77,9 @@ services:
       - approve_network
 
   postgres:
+    #-------------------------------------------------------------------------------------
+    # ==== Database for project based objects ====
+    #-------------------------------------------------------------------------------------
     restart: always
     container_name: approve.postgres
     image: ${POSTGRES_IMAGE}
@@ -91,6 +97,9 @@ services:
       - approve_network
 
   config-service:
+    #-------------------------------------------------------------------------------------
+    # ==== ENV Configurations for spring boot ====
+    #-------------------------------------------------------------------------------------
     restart: always
     container_name: approve.config
     image: ${CONFIG_IMAGE}
@@ -102,6 +111,9 @@ services:
       - approve_network
 
   backend-service:
+    #-------------------------------------------------------------------------------------
+    # ==== Project based service for APProVe, mainly handles project creation/editing ====
+    #-------------------------------------------------------------------------------------
     container_name: approve.backend
     restart: always
     image: ${BACKEND_IMAGE}
@@ -133,6 +145,9 @@ services:
       - approve_network
 
   frontend-service:
+    #-------------------------------------------------------------------------------------
+    # ==== Spring Boot frontend with integrated vuejs bundle ====
+    #-------------------------------------------------------------------------------------
     container_name: approve.frontend
     restart: always
     image: ${FRONTEND_IMAGE}
@@ -168,6 +183,9 @@ services:
      - approve_network
 
   user-service:
+    #-------------------------------------------------------------------------------------
+    # ==== Checks users and roles in keycloak ====
+    #-------------------------------------------------------------------------------------
     restart: always
     container_name: approve.user
     image: ${USER_IMAGE}
@@ -191,6 +209,9 @@ services:
       - approve_network
 
   eureka-service:
+    #-------------------------------------------------------------------------------------
+    # ==== Service Registry for backends ====
+    #-------------------------------------------------------------------------------------
     restart: always
     container_name: approve.eureka
     image: ${EUREKA_IMAGE}
@@ -205,6 +226,9 @@ services:
       - approve_network
 
   comments-service:
+    #-------------------------------------------------------------------------------------
+    # ==== Mainly CRUD service in golang for comments ====
+    #-------------------------------------------------------------------------------------
     image: ${COMMENT_IMAGE}
     container_name: approve.comment
     ports:
@@ -226,6 +250,9 @@ services:
       - approve_network
 
   mail-service:
+    #-------------------------------------------------------------------------------------
+    # ==== Mainly CRUD service in golang for emails and templates ====
+    #-------------------------------------------------------------------------------------
     image: ${NOTIFICATION_IMAGE}
     ports:
       - ${EMAIL_PORT}:4234
@@ -246,6 +273,9 @@ services:
       - approve_network
 
   automation-service:
+    #-------------------------------------------------------------------------------------
+    # ==== Mainly CRUD service in golang for project based automation ====
+    #-------------------------------------------------------------------------------------
     container_name: approve.automation
     image: ${AUTOMATIOM_IMAGE}
     ports:
@@ -268,6 +298,10 @@ services:
       - approve_network
 
   gateway-service:
+    #-------------------------------------------------------------------------------------
+    # ==== STILL BETA ====
+    # ==== Redirects calls to the corresponding service ====
+    #-------------------------------------------------------------------------------------
     container_name: approve.gateway
     image: ${GATEWAY_IMAGE}
     ports:
@@ -285,6 +319,9 @@ services:
      - approve_network
 
   manual-service:
+    #-------------------------------------------------------------------------------------
+    # ==== Every APProVe instance get's its own manual ====
+    #-------------------------------------------------------------------------------------
     container_name: approve.manual
     image: ${MANUAL_IMAGE}
     ports:
