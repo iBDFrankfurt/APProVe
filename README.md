@@ -15,13 +15,13 @@ APProVe is a software developed by the Interdisciplinary Biomaterials and Databa
 
 <p align="center">
   <a href="#">
-    <img src="https://gitlab.proskive.de/tschneider/APProVe-images/-/raw/master/img/workflow-proskive.png"
-         alt="Gitter">
+    <img src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/workflow-proskive.png"
+         alt="WorkFlow">
   </a>
 </p>
 
 ## System Requirements
-* RAM 4GB
+* RAM 6GB
 * Multi-core processor (e.g. Intel i7)
 * 500 MB hard disk space
 
@@ -61,73 +61,75 @@ $ http://localhost:$FRONTEND_PORT
 
 ## Configuration
 APProVe is configured solely through environment variables.
-Below is an example currently running on the demo server
+Below is a filled out example
 ```bash
 #---------------------------------------------------------------------------------------------------------
 # ==== External Images ====
-KEYCLOAK_IMAGE=jboss/keycloak:11.0.0
+KEYCLOAK_IMAGE=jboss/keycloak:14.0.0
 MONGO_IMAGE=mongo:3.6
-POSTGRES_IMAGE=postgres:9.6-alpine
-# ==== APProVe Images ====
-# If you want to update a specific Image, just replace them here in the .env
-CONFIG_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-config-service:1.2.0
-EUREKA_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-eureka-service:1.4.0
-BACKEND_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-backend-service:0.16.0
-FRONTEND_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-frontend-service:0.16.0
-USER_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-user-service:1.0.0
-ARCHIVE_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-archive-service:1.0.0
-COMMENT_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-comment-service:1.0
-NOTIFICATION_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-notification-service:0.9.1
-DRAFT_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-draft-service:0.5
-AUTOMATIOM_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-automation-service:1.0
-GATEWAY_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-gateway-service:0.0.1
-MANUAL_IMAGE=registry.gitlab.proskive.de/tschneider/APProVe-images/uct-manual-service:latest
+POSTGRES_IMAGE=postgres:12.7-alpine
+# ==== ProSkive-Bio Images ====
+CONFIG_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-config-service:1.0.0
+EUREKA_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-eureka-service:1.5.0
+BACKEND_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-backend-service:2.0.0
+FRONTEND_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-frontend-service:2.0.0
+USER_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-user-service:1.1.0
+COMMENT_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-comment-service:1.0.0
+NOTIFICATION_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-email-service:1.0.0
+AUTOMATIOM_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-automation-service:1.0.0
+GATEWAY_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-gateway-service:1.0.0
+MANUAL_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-manual-service:latest
 
 #---------------------------------------------------------------------------------------------------------
 # ==== Postgres Variables ====
-PROSKIVE_POSTGRES_USER=user
-PROSKIVE_POSTGRES_PASSWORD=pa$$w0rd
+# The postgres database will save all project related objects
+PROSKIVE_POSTGRES_USER=<username postgres>
+PROSKIVE_POSTGRES_PASSWORD=<passwort postgres>
 # Create default database for keycloak
-PROSKIVE_AUTH_DB=proskive_auth
+PROSKIVE_AUTH_DB=approve_auth
 
 #---------------------------------------------------------------------------------------------------------
 # ==== Mongo Variables ====
-PROSKIVE_MONGO_USER=user
-PROSKIVE_MONGO_PASSWORD=pa$$w0rd
-MONGO_URL=mongodb://proskive.mongo
+# Mongo saves all settings/emails/comments
+PROSKIVE_MONGO_USER=<username mongo>
+PROSKIVE_MONGO_PASSWORD=<password mongo>
+# We need the container name to connect to other containers in the same network. if you change the container.name, change it here accordingly
+MONGO_URL=mongodb://approve.mongo
+
 #---------------------------------------------------------------------------------------------------------
 # ==== Keycloak Variables ====
-KEYCLOAK_REALM_NAME=YOUR-REALM-NAME
-PROSKIVE_KEYCLOAK_ADMIN_USER=admin
-PROSKIVE_KEYCLOAK_ADMIN_PASSWORD=adminpa$$
-PROSKIVE_KEYCLOAK_URL=https://subdomain1.your-domain.com/auth
+# Keycloak works with realms, so create a realm first in keycloak and enter its name here
+KEYCLOAK_REALM_NAME=<your realm name>
+PROSKIVE_KEYCLOAK_ADMIN_USER=<keycloak admin username>
+PROSKIVE_KEYCLOAK_ADMIN_PASSWORD=<keycloak admin password>
+PROSKIVE_KEYCLOAK_URL=https://auth.demo.proskive.de/auth
 
 #---------------------------------------------------------------------------------------------------------
 # ==== Frontend URL ====
-# APProVe is best used with 3 subdomains. 
-# One for Keycloak, one for the frontend and one for the API-Gateway.
-PROSKIVE_SELF_URL=https://subdomain2.your-domain.com
+# In manuals or mails there will be a reference to the frontend
+PROSKIVE_SELF_URL=https://demo.proskive.de
 
 #---------------------------------------------------------------------------------------------------------
 # ==== Backend URL's ====
-PROSKIVE_BACKEND_URL=https://subdomain3.your-domain.com/project/
-PROSKIVE_NOTIFICATION_URL=https://subdomain3.your-domain.come/notification/
-PROSKIVE_ARCHIVE_URL=https://subdomain3.your-domain.com/archive/
-PROSKIVE_AUTOMATION_URL=https://subdomain3.your-domain.com/automation/
-PROSKIVE_USER_URL=https://subdomain3.your-domain.com/user/
-PROSKIVE_COMMENTS_URL=https://subdomain3.your-domain.com/comment/
-PROSKIVE_DRAFT_URL=https://subdomain3.your-domain.com/draft/
-PROSKIVE_MANUAL_URL=https://subdomain3.your-domain.com/manual/
+# The Frontend needs to call other services not only via eureka.
+# These URL's have to match your nginx routing!
+APPROVE_BACKEND_URL=https://backend.demo.proskive.de
+APPROVE_AUTOMATION_URL=https://backend.demo.proskive.de/automation
+APPROVE_USER_URL=https://backend.demo.proskive.de/user
+APPROVE_COMMENTS_URL=https://backend.demo.proskive.de/comment
+APPROVE_MANUAL_URL=https://backend.demo.proskive.de/manual
+APPROVE_MAIL_URL=https://backend.demo.proskive.de/mail
 
 #---------------------------------------------------------------------------------------------------------
 # ==== Eureka Variables ====
-EUREKA_URL=http://proskive.eureka:8761/eureka
+EUREKA_URL=http://approve.eureka:8761/eureka
 
 #---------------------------------------------------------------------------------------------------------
 # ==== User-Service Variables ====
 # !this user needs to be created in keycloak!
-KEYCLOAK_USER_NAME=service-user
-KEYCLOAK_USER_PASSWORD=service-user-pass
+# please read further down below in the Keycloak Configuration section
+KEYCLOAK_USER_NAME=<special user name>
+KEYCLOAK_USER_PASSWORD=<special user password>
 
 #---------------------------------------------------------------------------------------------------------
 # ==== ProSkive Ports ====
@@ -193,7 +195,7 @@ $ sudo certbot --nginx -d subdomain2.your-domain.com
 7. Restart NGINX
 $ sudo systemctl restart nginx
 ```
-That's it, the frontend should be available via https://subdomain2.your-domain.com!
+That's it, the frontend should be available via https://subdomain2.your-domain.com
 
 ### Keycloak NGINX Config
 It is basically the same procedure.
@@ -234,7 +236,8 @@ $ sudo systemctl restart nginx
 ```
 
 ### Backend NGINX Config
-An API gateway is used at the back end, so calls must be forwarded to the respective microservice. This changes the config file a bit.
+You have two options for your config. APProVe has the ability to use a gateway service called Zuul.
+In case you don't know which one to use, you can use this routing example without the gateway service.
 ```bash
 # 1. Navigate to the NGINX folder 
 $ cd /etc/nginx/sites-available/
@@ -252,33 +255,32 @@ server {
     proxy_set_header   X-Forwarded-Port $server_port;
     proxy_set_header   Host $http_host;
 
-    location /notification/ {
-        proxy_pass http://localhost:8762/notification/;
+    location / {
+    proxy_pass http://localhost:8000;
     }
 
-    location /archive/ {
-        proxy_pass http://localhost:<GATEWAY_PORT>/archive/;
+  location /user/ {
+     proxy_pass http://localhost:9001/;
     }
 
-    location /user/ {
-        proxy_pass http://localhost:<GATEWAY_PORT>/user/;
-    }
+  location /automation/ {
+    proxy_pass http://localhost:3233/;
+  }
 
-    location /project/ {
-        proxy_pass http://localhost:<GATEWAY_PORT>/project/;
-    }
+  location /comment/ {
+    proxy_pass http://localhost:3234/;
+  }
+  location /mail/ {
+    proxy_pass http://localhost:4234/;
+  }
+  location /eureka/ {
+    proxy_pass http://localhost:8761/;
+  }
 
-    location /automation/ {
-        proxy_pass http://localhost:<GATEWAY_PORT>/automation/;
-    }
+  location /manual/ {
+    proxy_pass http://localhost:8585/manual/;
+  }
 
-    location /comment/ {
-        proxy_pass http://localhost:<GATEWAY_PORT>/comment/;
-    }
-
-    location /draft/ {
-        proxy_pass http://localhost:<GATEWAY_PORT>/draft/;
-    }
 }
 # 3. Change the server_name and the port in the proxy_pass to the previously configured GATEWAY_PORT from the .env
 
@@ -294,6 +296,65 @@ $ sudo certbot --nginx -d subdomain3.your-domain.com
 7. Restart NGINX
 $ sudo systemctl restart nginx
 ```
+
+When using a gateway service, the location paths are different. Please keep in mind, that the gateway is still beeing tested. 
+
+```bash
+# 1. Navigate to the NGINX folder 
+$ cd /etc/nginx/sites-available/
+
+# 2. Create the config for the frontend
+$ sudo nano proskive.conf
+
+# 2. Paste the following
+server {
+    server_name gate.cbbmr.proskive.de;
+    proxy_set_header   X-Real-IP $remote_addr;
+    proxy_set_header   X-Scheme $scheme;
+    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header   X-Forwarded-Proto $scheme;
+    proxy_set_header   X-Forwarded-Port $server_port;
+    proxy_set_header   Host $http_host;
+
+    location /manual/ {
+        proxy_pass http://localhost:8585/manual/;
+    }
+    location /mail {
+        proxy_pass http://localhost:8762/mail/;
+    }
+
+    location /user/ {
+        proxy_pass http://localhost:8762/user/;
+    }
+
+    location /project {
+        proxy_pass http://localhost:8762/project/;
+    }
+
+    location /automation {
+        proxy_pass http://localhost:8762/automation/;
+    }
+
+    location /comment {
+        proxy_pass http://localhost:8762/comment/;
+    }
+
+}
+# 3. Change the server_name and the port in the proxy_pass to the previously configured GATEWAY_PORT from the .env
+
+# 4. Navigate to the sites-enabled folder from NGINX
+$ cd /etc/nginx/sites-enabled/
+
+5. Create a symbolic link
+$ sudo ln -s ../sites-available/proskive.conf
+
+6. Run Certbot to generate an encryption
+$ sudo certbot --nginx -d subdomain3.your-domain.com
+
+7. Restart NGINX
+$ sudo systemctl restart nginx
+```
+AS you can see, instead of calling the local address of each service, you call the gateway service that will do the routing for you.
 
 ## Keycloak Configuration
 Navigate to http://localhost:<AUTH_PORT> or https://subdomain1.your-domain.com
@@ -311,7 +372,7 @@ Web Origins: "+"<br>
 It should look like this:
 <p align="center">
   <a href="#">
-    <img src="https://gitlab.proskive.de/tschneider/APProVe-images/-/raw/master/img/keycloak-client.png"
+    <img src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/keycloak-client.png"
          alt="keycloak-client">
   </a>
 </p>
@@ -322,29 +383,51 @@ Go to Manage -> Users -> Add User and set a credential
 ```
 
 Before you can finally login in APProVe you should add two roles as well. <br>
+With the addition of providing custom roles in this and future updates, this step can be ignored in the near future, but for now you should add at least the ROLE_PROSKIVE_ADMIN role.
 
 ```bash
 Go to Configure -> Roles -> Add Role
 and add these two roles
 ROLE_PROSKIVE_ADMIN
-ROLE_PROSKIVE_USER
 
 Go to Manage -> Users -> Edit User and add the ROLE_PROSKIVE_ADMIN via "Role Mappings"
 ```
 
 The User-Service needs to be able to talk with Keycloak, so you must create a second user for this particular communication. <br>
-The user must have the name "KEYCLOAK_USER_NAME" and password "KEYCLOAK_USER_PASSWORD" which were set in the .env-file.
+The user must have the name "KEYCLOAK_USER_NAME" and password "KEYCLOAK_USER_PASSWORD" which you set in the .env-file.
 <br>
 This user needs a specific Client-Role -> realm-admin.
 <p align="center">
   <a href="#">
-    <img src="https://gitlab.proskive.de/tschneider/APProVe-images/-/raw/master/img/service-user.png"
+    <img src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/service-user.png"
          alt="service-user">
   </a>
 </p>
 
-After that you have successfully configured Keycloak and you can login with your ROLE_PROSKIVE_ADMIN User.
+## Keycloak Service Provider Interface
+Keycloak can be extended using custom code. To achieve this Keycloak has a number of Service Provider Interfaces (SPI) for which we can implement our own providers. APProVe has such a provider. It offers the possibility to create users or roles in Keycloak, which are automatically saved or updated in APProVe afterwards. The complete user and role management is thus controlled via Keycloak.
+In the future, we will provide our own keycloak image prebuilt with this spi, so that these steps become redundant.
 
+To use this functionality please check the following steps:
+```bash
+1. move to your docker-compose.yml location 
+2. git clone https://gitlab.proskive.de/uct/keycloak-event-listener.git
+3. nano docker-compose.yml
+4. add volumes to auth in docker-compose.yml
+volumes:
+  - "/your/location/keycloak-event-listener/target/:/opt/jboss/keycloak/standalone/deployments/"
+this will add the keycloak service in your keycloak instance
+5. For keycloak to have access to this SPI the folder needs read, write and execute permissions chmod -R 777 keycloak-event-listener/
+6. docker-compose down && docker-compose up -d
+
+To activate the spi, you need to enable it via the keycloak admin panel
+1. Login as admin in keycloak
+2. Navigate in the left Menu to Manage --> Events --> Click on Config and add "sample_event_listener" to Event Listeners
+3. Scroll down and click save
+
+To test if it has worked, add a new Role/User in Keycloak and check in the administration of APProVe if the role/user is present. For further information please check our manual which is installed via the docker-compose.yaml
+
+```
 ## Popular Documentation
 For further information take a look at our [iBDF Wiki](https://ibdf-frankfurt.de/wiki/Hauptseite).
 
