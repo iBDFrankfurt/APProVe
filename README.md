@@ -91,6 +91,12 @@ Check the line >>Deployed "keycloak-event-listener.jar" (runtime-name : "keycloa
 
 Click [here](#keycloak-configuration) for a detailed explanation.
 
+* OPTIONAL: You can start and check each service one after another to familiarize yourself with the different services
+Config-Service stores all config files for the spring-boot services and acts as a centralized config hub. so it should be started before all other spring-boot services
+```sh
+$ docker-compose up -d config-service
+```
+
 * After the configuration of keycloak you can now start the rest
 ```sh
 $ docker-compose up -d

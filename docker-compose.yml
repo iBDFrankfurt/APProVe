@@ -105,8 +105,6 @@ services:
     image: ${CONFIG_IMAGE}
     ports:
       - ${CONFIG_PORT}:8888
-    depends_on:
-      - eureka-service
     networks:
       - approve_network
 
@@ -222,6 +220,8 @@ services:
       CONFIG_PORT: ${CONFIG_PORT}
       CONFIG_URL: config-service
       JAVA_OPTS: "-XX:+UseSerialGC -XX:MaxRAM=512m"
+    depends_on:
+      - config-service
     networks:
       - approve_network
 
