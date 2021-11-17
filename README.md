@@ -80,7 +80,9 @@ Click [here](#reverse-proxy) for an example in NGINX
 Click [here](#keycloak-configuration) for a detailed explanation.
 
 * Run docker-compose if everything is configured
+```sh
 $ docker-compose up -d
+```
 
 * First test the installation: check to see if there is a frontend running on $FRONTEND_PORT:
 ```sh
@@ -89,7 +91,7 @@ $ curl localhost:$FRONTEND_PORT | grep APProVe
 
 * If you need to stop APProVe, from within the directory with the docker-compose.yml:
 ```sh
-$ ocker-compose down
+$ docker-compose down
 ```
 
 ## Configuration
