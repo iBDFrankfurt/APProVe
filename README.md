@@ -56,9 +56,10 @@ $ git clone https://gitlab.proskive.de/uct/open-approve.git
 $ cd open-approve
 ```
 
-* Adjust .env file to your preferences
+* Copy the example and adjust .env file to your preferences
 Click [here](#configuration) to view how.
 ```sh
+$ cp .env-example .env
 $ nano .env
 ```
 
