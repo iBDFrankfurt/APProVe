@@ -76,9 +76,15 @@ Click [here](#keycloak-service-provider-interface) to view more.
 
 Click [here](#reverse-proxy) for an example in NGINX
 
-* Configure Keycloak 
+* To configure Keycloak we need to start the postgres and auth container first. Postgres should be started first, so that Keycloak can connect to it.
 ```sh
-$ docker-compose start auth
+$ docker-compose up -d postgres
+Check if there are any errors
+$ docker logs approve.postgres
+
+$ docker-compose up -d auth
+Check if there are any errors
+$ docker logs approve.auth
 ```
 Click [here](#keycloak-configuration) for a detailed explanation.
 
