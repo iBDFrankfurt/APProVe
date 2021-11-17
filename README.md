@@ -37,33 +37,57 @@ APProVe ist die erste Software, die den Beantragungsprozess und die weitere Nach
 7.	Zuordnung von personen- und projektbezogenen to-dos für die Biobankmitarbeite
 
 
-## How To Use
+## Starting APProVe
 
-To run this application, you'll need [Docker](https://docker.com) and [Docker Compose](https://docs.docker.com/compose/).
+* [Install Docker][docker] and [git][git] and test with:
 
-```bash
-# 1. Clone this repository
-$ git clone https://gitlab.proskive.de/uct/open-approve.git
-
-# 2. Go into the repository
-$ cd APProVe-images
-
-# 3. Adjust .env file to your preferences
-$ sudo nano .env
-
-4. Clone the Keycloak SPI keycloak-event-listener
-$ git clone https://gitlab.proskive.de/uct/keycloak-event-listener.git
-
-5. Mount it as volume for Keycloak
-Click here [link](#keycloak-service-provider-interface)
-
-# 4. Run docker-compose
-$ docker-compose up -d
-
-# 4. Access the Frontend
-$ http://localhost:$FRONTEND_PORT
+```sh
+docker run hello-world
+git --version
 ```
 
+* Clone this repository
+```sh
+$ git clone https://gitlab.proskive.de/uct/open-approve.git
+```
+
+* Go into the repository
+```sh
+$ cd APProVe-images
+```
+
+* Adjust .env file to your preferences
+Click [here](#configuration) to view how.
+```sh
+$ nano .env
+```
+
+* Clone the Keycloak SPI keycloak-event-listener
+```sh
+$ git clone https://gitlab.proskive.de/uct/keycloak-event-listener.git
+```
+
+* Mount it as volume for Keycloak
+Click [here](#keycloak-service-provider-interface) to view more.
+
+* Configure Reverse Proxy
+Click [here](#reverse-proxy) for an example in NGINX
+
+* Configure Keycloak 
+Click [here](#keycloak-configuration) for a detailed explanation.
+
+* Run docker-compose if everything is configured
+$ docker-compose up -d
+
+* First test the installation: check to see if there is a frontend running on $FRONTEND_PORT:
+```sh
+$ curl localhost:$FRONTEND_PORT | grep APProVe
+```
+
+* If you need to stop APProVe, from within the directory with the docker-compose.yml:
+```sh
+$ ocker-compose down
+```
 
 ## Configuration
 APProVe is configured through environment variables.
@@ -143,8 +167,8 @@ AUTH_PORT=8443
 MONGO_PORT=27017
 POSTGRES_PORT=5432
 CONFIG_PORT=8888
-BACKEND_PORT=8001
-FRONTEND_PORT=8000
+BACKEND_PORT=8000
+FRONTEND_PORT=8001
 USER_PORT=9001
 EUREKA_PORT=8761
 ARCHIVE_PORT=8002
@@ -364,12 +388,12 @@ AS you can see, instead of calling the local address of each service, you call t
 
 ## Keycloak Configuration
 Navigate to http://localhost:<AUTH_PORT> or https://subdomain1.your-domain.com
-You can login with the PROSKIVE_KEYCLOAK_ADMIN_USER and PROSKIVE_KEYCLOAK_ADMIN_PASSWORD variables from the .env-file.
+You can login with the APPROVE_KEYCLOAK_ADMIN_USER and APPROVE_KEYCLOAK_ADMIN_PASSWORD variables from the .env-file.
 After that you should create a new Realm and set it to KEYCLOAK_REALM_NAME from the .env-file.
 In case you do not know how to create a new Realm, Keycloak offers a great [documentation](https://www.keycloak.org/docs/latest/getting_started/index.html#creating-a-realm-and-a-user).
 <br>
 In the next step we must protect our frontend with keycloak. Therefore, we need to create a new Client. 
-Name this new Client "ProSkive-Web". Afterwards set the Access Type to "public" and the Root Url to your frontend.
+Name this new Client how you want. Afterwards set the Access Type to "public" and the Root Url to your frontend.
 <br>
 Example: <br>
 Root Url: https://subdomain2.your-domain.com/ <br>
@@ -453,3 +477,6 @@ This software uses the following open source packages:
 - [jQuery.js](https://jquery.com/)
 - [Bootstrap](https://getbootstrap.com/)
 - [Keycloak](https://www.keycloak.org/about)
+
+[docker]: <https://docs.docker.com/install>
+[git]: <https://www.atlassian.com/git/tutorials/install-git>
