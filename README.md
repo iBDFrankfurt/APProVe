@@ -167,7 +167,8 @@ $ docker-compose up -d
 ```
 
 * Add your admin user
-Check [here](#add-admin-user-approve)
+
+Check [here](#add-admin-user-approve).
 
 * First test the installation: check to see if there is a frontend running on $FRONTEND_PORT:
 ```sh
