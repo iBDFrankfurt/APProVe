@@ -68,12 +68,15 @@ $ git clone https://gitlab.proskive.de/uct/keycloak-event-listener.git
 ```
 
 * Mount it as volume for Keycloak
+
 Click [here](#keycloak-service-provider-interface) to view more.
 
 * Configure Reverse Proxy
+
 Click [here](#reverse-proxy) for an example in NGINX
 
 * Configure Keycloak 
+
 Click [here](#keycloak-configuration) for a detailed explanation.
 
 * Run docker-compose if everything is configured
