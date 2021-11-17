@@ -53,7 +53,7 @@ $ git clone https://gitlab.proskive.de/uct/open-approve.git
 
 * Go into the repository
 ```sh
-$ cd APProVe-images
+$ cd open-approve
 ```
 
 * Adjust .env file to your preferences
