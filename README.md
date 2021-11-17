@@ -507,13 +507,23 @@ If you add a new user in Keycloak, this user will automatically be saved in APPr
 Go to Manage -> Users -> Add User and set a credential
 ```
 
-Before you can login in APProVe this user needs to have a role, so you should add two roles as well. <br>
+Before you can login in APProVe this user needs to have a role, so you should add the admin role. <br>
 **With the addition of providing custom roles in this and future updates, this step can be ignored in the near future, but for now you should add at least the ROLE_PROSKIVE_ADMIN role.**
 
 ```bash
 Go to Configure -> Roles -> Add Role
-and add these two roles
+and add this role
 ROLE_PROSKIVE_ADMIN
+Under Attributes set the variables
+is_admin true
+can_edit true
+
+<p align="center">
+  <a href="#">
+    <img src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/admin_roles.png"
+         alt="WorkFlow">
+  </a>
+</p>
 
 Go to Manage -> Users -> Edit User and add the ROLE_PROSKIVE_ADMIN via "Role Mappings"
 ```
