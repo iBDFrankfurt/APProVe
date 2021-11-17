@@ -91,7 +91,7 @@ Check the line >>Deployed "keycloak-event-listener.jar" (runtime-name : "keycloa
 
 Click [here](#keycloak-configuration) for a detailed explanation.
 
-* run docker-compose if everything is configured
+* After the configuration of keycloak you can now start the rest
 ```sh
 $ docker-compose up -d
 ```
@@ -422,6 +422,7 @@ It should look like this:
 </p>
 In the next step we need to add one new client. Name this one "rest-client". You do not need to add anything else here.
 Now you should add your first user! <br>
+
 ```bash
 Go to Manage -> Users -> Add User and set a credential
 ```
