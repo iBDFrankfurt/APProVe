@@ -79,8 +79,9 @@ Click [here](#reverse-proxy) for an example in NGINX
 
 Click [here](#keycloak-configuration) for a detailed explanation.
 
-* Run docker-compose if everything is configured
+* Create an external network and run docker-compose if everything is configured
 ```sh
+$ docker network create approve_network
 $ docker-compose up -d
 ```
 
