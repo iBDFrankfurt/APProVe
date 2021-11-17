@@ -76,8 +76,9 @@ Click [here](#keycloak-service-provider-interface) to view more.
 
 Click [here](#reverse-proxy) for an example in NGINX
 
-* To configure Keycloak we need to start the postgres and auth container first. Postgres should be started first, so that Keycloak can connect to it.
+* To configure Keycloak we need to create a network then start the postgres and auth container. Postgres should be started first, so that Keycloak can connect to it.
 ```sh
+$ docker network create approve_network
 $ docker-compose up -d postgres
 Check if there are any errors
 $ docker logs approve.postgres
@@ -85,12 +86,13 @@ $ docker logs approve.postgres
 $ docker-compose up -d auth
 Check if there are any errors
 $ docker logs approve.auth
+Check the line >>Deployed "keycloak-event-listener.jar" (runtime-name : "keycloak-event-listener.jar")<<, if it doesn't exist check for the error 
 ```
+
 Click [here](#keycloak-configuration) for a detailed explanation.
 
-* Create an external network and run docker-compose if everything is configured
+* run docker-compose if everything is configured
 ```sh
-$ docker network create approve_network
 $ docker-compose up -d
 ```
 
