@@ -518,15 +518,15 @@ Under Attributes set the variables
 is_admin true
 can_edit true
 
+Go to Manage -> Users -> Edit User and add the ROLE_PROSKIVE_ADMIN via "Role Mappings"
+```
+
 <p align="center">
   <a href="#">
     <img src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/admin_roles.png"
          alt="WorkFlow">
   </a>
 </p>
-
-Go to Manage -> Users -> Edit User and add the ROLE_PROSKIVE_ADMIN via "Role Mappings"
-```
 
 The User-Service needs to be able to talk with Keycloak, so you must create a second user for this particular communication. <br>
 The user must have the name "KEYCLOAK_USER_NAME" and password "KEYCLOAK_USER_PASSWORD" which you set in the .env-file.
