@@ -140,6 +140,8 @@ services:
 
       APPROVE_FRONTEND_URL: ${APPROVE_FRONTEND_URL}
       JAVA_OPTS: "-XX:+UseSerialGC -XX:MaxRAM=1024m"
+    depends_on:
+      - postgres
     networks:
       - approve_network
 
