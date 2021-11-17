@@ -96,7 +96,7 @@ $ docker-compose down
 
 ## Configuration
 APProVe is configured through environment variables.
-Below is a filled out example
+Below is an example how it could look.
 ```bash
 #---------------------------------------------------------------------------------------------------------
 # ==== External Images ====
@@ -167,7 +167,7 @@ KEYCLOAK_USER_NAME=<special user name>
 KEYCLOAK_USER_PASSWORD=<special user password>
 
 #---------------------------------------------------------------------------------------------------------
-# ==== ProSkive Ports ====
+# ==== APProVe Ports ====
 AUTH_PORT=8443
 MONGO_PORT=27017
 POSTGRES_PORT=5432
