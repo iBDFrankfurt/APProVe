@@ -133,6 +133,7 @@ services:
       POSTGRES_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
       POSTGRES_URL: approve.postgres
       POSTGRES_PORT: ${POSTGRES_PORT}
+      DB_NAME: ${APPROVE_PROJECT_DB}
       # Config-Service variables
       CONFIG_URL: approve.config
       CONFIG_PORT: ${CONFIG_PORT}

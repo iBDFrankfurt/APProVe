@@ -92,9 +92,20 @@ Check the line >>Deployed "keycloak-event-listener.jar" (runtime-name : "keycloa
 Click [here](#keycloak-configuration) for a detailed explanation.
 
 * OPTIONAL: You can start and check each service one after another to familiarize yourself with the different services
-Config-Service stores all config files for the spring-boot services and acts as a centralized config hub. so it should be started before all other spring-boot services
+
+1. Config-Service stores all config files for the spring-boot services and acts as a centralized config hub. so it should be started before all other spring-boot services
 ```sh
 $ docker-compose up -d config-service
+```
+
+2. Eureka-Service acts as a registration for every service. It allows communication between each service and can store stats about those.
+```sh
+$ docker-compose up -d eureka-service
+```
+
+3. Backend-Service stores all project related data and migrates the database to the postgres service
+```sh
+$ docker-compose up -d backend-service
 ```
 
 * After the configuration of keycloak you can now start the rest
