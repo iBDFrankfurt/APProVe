@@ -161,10 +161,13 @@ $ docker logs approve.manual
 ```
 
 
-* After the configuration of keycloak you can now start the rest
+* If you want to start all services parallel...
 ```sh
 $ docker-compose up -d
 ```
+
+* Add your admin user
+
 
 * First test the installation: check to see if there is a frontend running on $FRONTEND_PORT:
 ```sh
@@ -491,14 +494,21 @@ It should look like this:
   </a>
 </p>
 In the next step we need to add one new client. Name this one "rest-client". You do not need to add anything else here.
-Now you should add your first user! <br>
+
+## Add Admin User APProVe
+Before you add your first user be sure to check the followin:
+1. Auth-Service needs to be up and running
+2. Auth-Service Keycloak SPI should be linked and mounted
+3. Backend-Service shoudl be up and running
+
+If you add a new user in Keycloak, this user will automatically be saved in APProVe if the above statements are true.
 
 ```bash
 Go to Manage -> Users -> Add User and set a credential
 ```
 
-Before you can finally login in APProVe you should add two roles as well. <br>
-With the addition of providing custom roles in this and future updates, this step can be ignored in the near future, but for now you should add at least the ROLE_PROSKIVE_ADMIN role.
+Before you can login in APProVe this user needs to have a role, so you should add two roles as well. <br>
+**With the addition of providing custom roles in this and future updates, this step can be ignored in the near future, but for now you should add at least the ROLE_PROSKIVE_ADMIN role.**
 
 ```bash
 Go to Configure -> Roles -> Add Role
