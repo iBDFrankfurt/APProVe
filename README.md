@@ -519,6 +519,8 @@ is_admin true
 can_edit true
 
 Go to Manage -> Users -> Edit User and add the ROLE_PROSKIVE_ADMIN via "Role Mappings"
+
+If you want to create a non admin role, just change the variables accordingly (i.e is_admin false)
 ```
 
 <p align="center">
