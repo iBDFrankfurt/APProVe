@@ -255,6 +255,7 @@ services:
     # ==== Mainly CRUD service in golang for emails and templates ====
     #-------------------------------------------------------------------------------------
     image: ${EMAIL_IMAGE}
+    container_name: approve.mails
     ports:
       - ${EMAIL_PORT}:4234
     environment:

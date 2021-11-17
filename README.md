@@ -91,22 +91,75 @@ Check the line >>Deployed "keycloak-event-listener.jar" (runtime-name : "keycloa
 
 Click [here](#keycloak-configuration) for a detailed explanation.
 
-* OPTIONAL: You can start and check each service one after another to familiarize yourself with the different services
+* When you first run APProVe it is advised to start every service after another to check if a service runs properly. If you want to quickly deploy APProVe you can skip these.
 
 1. Config-Service stores all config files for the spring-boot services and acts as a centralized config hub. so it should be started before all other spring-boot services
 ```sh
 $ docker-compose up -d config-service
+$ docker logs approve.config
 ```
 
 2. Eureka-Service acts as a registration for every service. It allows communication between each service and can store stats about those.
 ```sh
 $ docker-compose up -d eureka-service
+$ docker logs approve.eureka
 ```
 
 3. Backend-Service stores all project related data and migrates the database to the postgres service
 ```sh
 $ docker-compose up -d backend-service
+$ docker logs approve.backend
 ```
+You should see in the backend-service logs that the migration of the database started.
+
+4. User-Service acts as a middle man between the frontend and keycloak
+```sh
+$ docker-compose up -d user-service
+$ docker logs approve.user
+```
+
+5. Frontend-Service acts as the frontend of APProVe 
+```sh
+$ docker-compose up -d frontend-service
+$ docker logs approve.frontend
+```
+
+6. Gateway-Service is optional and connects itself to eureka to receive all registered service endpoints 
+```sh
+$ docker-compose up -d gateway-service
+$ docker logs approve.gateway
+```
+
+7. Mongo Service acts as a non-releational database to save comments/emails/email-templates and automation rules
+```sh
+$ docker-compose up -d mongo
+$ docker logs approve.mongo
+```
+
+8. Comment-Service will save/update/delete all comments in all projects
+```sh
+$ docker-compose up -d comments-service
+$ docker logs approve.comment
+```
+
+9. Email-Service will save/update/delete all emails and email templates and send emails. You need to connect a mail-server yourself
+```sh
+$ docker-compose up -d mail-service
+$ docker logs approve.mails
+```
+
+10. Automation-Service will save/update/delete automation rules. These rules can be very complex, please read the APProVe Manual
+```sh
+$ docker-compose up -d automation-service
+$ docker logs approve.automation
+```
+
+10. Manual-Service will start a manual you can consult before using APProVe
+```sh
+$ docker-compose up -d manual-service
+$ docker logs approve.manual
+```
+
 
 * After the configuration of keycloak you can now start the rest
 ```sh
