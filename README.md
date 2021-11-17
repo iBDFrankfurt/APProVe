@@ -39,17 +39,23 @@ APProVe ist die erste Software, die den Beantragungsprozess und die weitere Nach
 
 ## How To Use
 
-To run this application, you'll need [Docker](https://docker.com) installed on your computer. From your command line:
+To run this application, you'll need [Docker](https://docker.com) and [Docker Compose](https://docs.docker.com/compose/).
 
 ```bash
 # 1. Clone this repository
-$ git clone https://gitlab.proskive.de/tschneider/APProVe-images
+$ git clone https://gitlab.proskive.de/uct/open-approve.git
 
 # 2. Go into the repository
 $ cd APProVe-images
 
 # 3. Adjust .env file to your preferences
 $ sudo nano .env
+
+4. Clone the Keycloak SPI keycloak-event-listener
+$ git clone https://gitlab.proskive.de/uct/keycloak-event-listener.git
+
+5. Mount it as volume for Keycloak
+Click here [link](#keycloak-service-provider-interface)
 
 # 4. Run docker-compose
 $ docker-compose up -d
@@ -60,7 +66,7 @@ $ http://localhost:$FRONTEND_PORT
 
 
 ## Configuration
-APProVe is configured solely through environment variables.
+APProVe is configured through environment variables.
 Below is a filled out example
 ```bash
 #---------------------------------------------------------------------------------------------------------
