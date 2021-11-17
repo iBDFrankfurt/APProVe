@@ -253,7 +253,7 @@ services:
     #-------------------------------------------------------------------------------------
     # ==== Mainly CRUD service in golang for emails and templates ====
     #-------------------------------------------------------------------------------------
-    image: ${NOTIFICATION_IMAGE}
+    image: ${EMAIL_IMAGE}
     ports:
       - ${EMAIL_PORT}:4234
     environment:

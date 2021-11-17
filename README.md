@@ -76,7 +76,9 @@ Click [here](#keycloak-service-provider-interface) to view more.
 Click [here](#reverse-proxy) for an example in NGINX
 
 * Configure Keycloak 
-
+```sh
+$ docker-compose start auth
+```
 Click [here](#keycloak-configuration) for a detailed explanation.
 
 * Create an external network and run docker-compose if everything is configured
