@@ -15,7 +15,7 @@ APProVe is a software developed by the Interdisciplinary Biomaterials and Databa
 
 <p align="center">
   <a href="#">
-    <img src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/workflow-proskive.png"
+    <img src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/Project_management-APProVe_en.png"
          alt="WorkFlow">
   </a>
 </p>
