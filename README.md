@@ -1,5 +1,5 @@
 <div align="center">
-  <b>APProVe</b>
+  <b>APProVe <sup>by iBDF</sup></b>
   <br>
 </div>
 <br>
@@ -10,7 +10,7 @@ APProVe is a software developed by the Interdisciplinary Biomaterials and Databa
 [[_TOC_]]
 
 <div align="center">
-<h4>A Project Proposal management Software for Biobanks.</h4>
+<h4>A Project Proposal management Software for Biobanks</h4>
 </div>
 
 <p align="center">
@@ -22,7 +22,7 @@ APProVe is a software developed by the Interdisciplinary Biomaterials and Databa
 
 ## System Requirements
 * RAM 6GB
-* Multi-core processor (e.g. Intel i7)
+* Multi-core processor (e.g. Intel i5)
 * 500 MB hard disk space
 
 ## Funktionen
