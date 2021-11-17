@@ -24,21 +24,22 @@ APProVe is a software developed by the Interdisciplinary Biomaterials and Databa
 * Multi-core processor (e.g. Intel i5)
 * 500 MB hard disk space
 
-## Funktionen
+## Features
 
-APProVe ist die erste Software, die den Beantragungsprozess und die weitere Nachverfolgung von Projekten für alle Beteiligte digital und transparent abbildet. Folgende Funktionen sind bisher integriert:
-1.	online Einreichung von Projektanträgen
-2.	Nutzbezogener Zugriff/Einsicht auf/von Projekte/n
-3.	Übersicht über alle Projekte an denen ein Nutzer als Projektleiter oder Kooperationsleiter beteiligt ist
-4.	Nachverfolgung des aktuellen Projektstatus
-5.	Email-Benachrichtigung bei Änderungen am Projekt, Projektstatus oder neuen Kommentaren
-6.	Projektbezogene Kommunikation über Kommentarfunktion
-7.	Zuordnung von personen- und projektbezogenen to-dos für die Biobankmitarbeite
+APProVe is the first software to digitally and transparently map the application process and further follow-up of projects for all parties involved. The following functions have been integrated so far:
 
+1. online submission of project applications
+2. user-related access/view of project(s)
+3. overview of all projects in which a user is involved
+4. tracking of current project status
+5. email notification of project changes, project status or new comments
+6. project-related communication via comment function
+7. assignment of project-related to-dos for the biobank members
+8. Tabular summary of projects in tiles based on various criteria for a better overview
 
 ## Starting APProVe
 
-* [Install Docker][docker] and [git][git] and test with:
+* Install [Docker][docker] and [git][git] and test with:
 
 ```sh
 docker run hello-world
@@ -153,7 +154,7 @@ $ docker-compose up -d automation-service
 $ docker logs approve.automation
 ```
 
-10. Manual-Service will start a manual you can consult before using APProVe
+11. Manual-Service will start a manual you can consult before using APProVe
 ```sh
 $ docker-compose up -d manual-service
 $ docker logs approve.manual
