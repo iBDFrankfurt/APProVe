@@ -53,7 +53,7 @@ services:
     #-------------------------------------------------------------------------------------
     # ==== Folder needs 777 rights for keycloak: see README====
     #-------------------------------------------------------------------------------------
-      - ".keycloak-event-listener/target/:/opt/jboss/keycloak/standalone/deployments/"
+      - "./keycloak-event-listener/target/:/opt/jboss/keycloak/standalone/deployments/"
     depends_on:
       - postgres
     networks:
