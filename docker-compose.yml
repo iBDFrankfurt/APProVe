@@ -180,7 +180,7 @@ services:
       FRONTEND_ADMIN_LAYOUT: /css/demoProskive.css
       FRONTEND_SB_LAYOUT:  /css/scientificBoardProskive.css
       APPROVE_EMAIL_URL: ${APPROVE_FRONTEND_URL}
-      PPROVE_CLIENT_ID: ${APPROVE_CLIENT_ID}
+      APPROVE_CLIENT_ID: ${APPROVE_CLIENT_ID}
     networks:
      - approve_network
 
