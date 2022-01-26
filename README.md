@@ -268,6 +268,29 @@ GATEWAY_PORT=8762
 MANUAL_PORT=8585
 ```
 
+## Running a local installation
+In order to run APProVE on the local machine, you have to route via the docker internal host. This is because you will access your application with a browser on your machine (which name is localhost, or 127.0.0.1), but inside Docker it will run in its own container, which name is  host.docker.internal. If you would run it on a server the reverse proxy would do the trick for it. Locally it is easier to use the docker host.
+To make things work, you’ll need to make sure to have the following line added to your hosts file (/etc/hosts on Mac/Linux, c:\Windows\System32\Drivers\etc\hosts on Windows).
+It should be there by default after installing docker.
+```bash
+192.168.0.xxx host.docker.internal  # This is the "localhost" of docker, where xxx is different on every maschine
+```
+After that you should add this IP to the env file.
+
+APPROVE_KEYCLOAK_URL=http://192.168.0.xxx:8080/auth
+APPROVE_BACKEND_URL=http://192.168.0.xxx:8000
+APPROVE_AUTOMATION_URL=http://192.168.0.xxx:3233
+APPROVE_USER_URL=http://192.168.0.xxx:9001
+APPROVE_COMMENTS_URL=http://192.168.0.xxx:3234
+APPROVE_MANUAL_URL=http://192.168.0.xxx:8585
+APPROVE_MAIL_URL=http://192.168.0.xxx:4234
+
+(host.docker.internal should work as well)
+
+Make sure you add the frontend url in the client configuration of keycloak.
+
+After that you should be able to connect to the approve frontend via http://192.168.0.xxx:8001/ and login with your user created in keycloak.
+
 ## Reverse Proxy
 To be accessible from the outside world, a domain and at least 3 subdomains are required. 
 This guide explains the steps using [NGINX](https://www.nginx.com/) and [Certbot](https://certbot.eff.org/) to encrypt APProVe with SSL and to set up a reverse proxy to 
