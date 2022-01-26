@@ -275,8 +275,10 @@ It should be there by default after installing docker.
 ```bash
 192.168.0.xxx host.docker.internal  # This is the "localhost" of docker, where xxx is different on every maschine
 ```
+
 After that you should add this IP to the env file.
 
+```bash
 APPROVE_KEYCLOAK_URL=http://192.168.0.xxx:8080/auth
 APPROVE_BACKEND_URL=http://192.168.0.xxx:8000
 APPROVE_AUTOMATION_URL=http://192.168.0.xxx:3233
@@ -284,6 +286,7 @@ APPROVE_USER_URL=http://192.168.0.xxx:9001
 APPROVE_COMMENTS_URL=http://192.168.0.xxx:3234
 APPROVE_MANUAL_URL=http://192.168.0.xxx:8585
 APPROVE_MAIL_URL=http://192.168.0.xxx:4234
+```
 
 (host.docker.internal should work as well)
 
