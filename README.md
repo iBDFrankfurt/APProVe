@@ -124,7 +124,7 @@ $ docker-compose up -d frontend-service
 $ docker logs approve.frontend
 ```
 
-6. Gateway-Service is optional and connects itself to eureka to receive all registered service endpoints 
+6. <OPTIONAL> Gateway-Service is optional and connects itself to eureka to receive all registered service endpoints 
 ```sh
 $ docker-compose up -d gateway-service
 $ docker logs approve.gateway
@@ -186,72 +186,70 @@ Below is an example how it could look.
 ```bash
 #---------------------------------------------------------------------------------------------------------
 # ==== External Images ====
-KEYCLOAK_IMAGE=jboss/keycloak:14.0.0
+KEYCLOAK_IMAGE=jboss/keycloak:16.1.1
 MONGO_IMAGE=mongo:3.6
 POSTGRES_IMAGE=postgres:12.7-alpine
 # ==== ProSkive-Bio Images ====
-CONFIG_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-config-service:1.0.0
-EUREKA_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-eureka-service:1.5.0
-BACKEND_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-backend-service:2.0.0
-FRONTEND_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-frontend-service:2.0.0
-USER_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-user-service:1.1.0
+CONFIG_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-config-service:1.5.0
+EUREKA_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-eureka-service:1.7.0
+BACKEND_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-backend-service:2.4.1
+FRONTEND_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-frontend-service:2.4.1
+USER_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-user-service:1.2.0
 COMMENT_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-comment-service:1.0.0
 NOTIFICATION_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-email-service:1.0.0
 AUTOMATIOM_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-automation-service:1.0.0
 GATEWAY_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-gateway-service:1.0.0
 MANUAL_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-manual-service:latest
-
+# new in version 2.4.0
+DRAFT_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-draft-service:0.2.1
 #---------------------------------------------------------------------------------------------------------
 # ==== Postgres Variables ====
-# The postgres database will save all project related objects
-PROSKIVE_POSTGRES_USER=<username postgres>
-PROSKIVE_POSTGRES_PASSWORD=<passwort postgres>
+APPROVE_POSTGRES_USER=approve_user
+APPROVE_POSTGRES_PASSWORD=approve_password
 # Create default database for keycloak
-PROSKIVE_AUTH_DB=approve_auth
+APPROVE_AUTH_DB=approve_auth
+APPROVE_PROJECT_DB=approve_backend
 
 #---------------------------------------------------------------------------------------------------------
 # ==== Mongo Variables ====
-# Mongo saves all settings/emails/comments
-PROSKIVE_MONGO_USER=<username mongo>
-PROSKIVE_MONGO_PASSWORD=<password mongo>
-# We need the container name to connect to other containers in the same network. if you change the container.name, change it here accordingly
+APPROVE_MONGO_USER=approve_user
+APPROVE_MONGO_PASSWORD=approve_password!
 MONGO_URL=mongodb://approve.mongo
 
 #---------------------------------------------------------------------------------------------------------
 # ==== Keycloak Variables ====
-# Keycloak works with realms, so create a realm first in keycloak and enter its name here
-KEYCLOAK_REALM_NAME=<your realm name>
-PROSKIVE_KEYCLOAK_ADMIN_USER=<keycloak admin username>
-PROSKIVE_KEYCLOAK_ADMIN_PASSWORD=<keycloak admin password>
-PROSKIVE_KEYCLOAK_URL=https://auth.demo.proskive.de/auth
+KEYCLOAK_REALM_NAME=UCT
+APPROVE_KEYCLOAK_ADMIN_USER=admin
+APPROVE_KEYCLOAK_ADMIN_PASSWORD=aSecretONE_
+APPROVE_KEYCLOAK_URL=https://auth.approved.ibdf-frankfurt.de/auth
+APPROVE_CLIENT_ID=APProVe-Web
 
 #---------------------------------------------------------------------------------------------------------
 # ==== Frontend URL ====
-# In manuals or mails there will be a reference to the frontend
-PROSKIVE_SELF_URL=https://demo.proskive.de
+# ProSkive-Bio is best used with 3 subdomains.
+# One for Keycloak, one for the frontend and one for the API-Gateway.
+APPROVE_FRONTEND_URL=https://approved.ibdf-frankfurt.de
 
 #---------------------------------------------------------------------------------------------------------
 # ==== Backend URL's ====
-# The Frontend needs to call other services not only via eureka.
-# These URL's have to match your nginx routing!
-APPROVE_BACKEND_URL=https://backend.demo.proskive.de
-APPROVE_AUTOMATION_URL=https://backend.demo.proskive.de/automation
-APPROVE_USER_URL=https://backend.demo.proskive.de/user
-APPROVE_COMMENTS_URL=https://backend.demo.proskive.de/comment
-APPROVE_MANUAL_URL=https://backend.demo.proskive.de/manual
-APPROVE_MAIL_URL=https://backend.demo.proskive.de/mail
-
+APPROVE_BACKEND_URL=https://backend.approved.ibdf-frankfurt.de
+APPROVE_AUTOMATION_URL=https://backend.approved.ibdf-frankfurt.de/automation-service
+APPROVE_USER_URL=https://backend.approved.ibdf-frankfurt.de/user-service
+APPROVE_COMMENTS_URL=https://backend.approved.ibdf-frankfurt.de/comment-service
+APPROVE_MANUAL_URL=https://backend.approved.ibdf-frankfurt.de/manual
+APPROVE_MAIL_URL=https://backend.approved.ibdf-frankfurt.de/mail-service
+# new in version 2.4.0
+APPROVE_DRAFT_URL=https://backend.approved.ibdf-frankfurt.de/draft-service
 #---------------------------------------------------------------------------------------------------------
 # ==== Eureka Variables ====
 EUREKA_URL=http://approve.eureka:8761/eureka
-
 #---------------------------------------------------------------------------------------------------------
 # ==== User-Service Variables ====
 # !this user needs to be created in keycloak!
-# please read further down below in the Keycloak Configuration section
-KEYCLOAK_USER_NAME=<special user name>
-KEYCLOAK_USER_PASSWORD=<special user password>
-
+KEYCLOAK_USER_NAME=restuser
+KEYCLOAK_USER_PASSWORD=restuser
+PROSKIVE_FRONTEND_LAYOUT=demoLayout
+KEYCLOAK_REST_CLIENT_ID=APProVe-Web
 #---------------------------------------------------------------------------------------------------------
 # ==== APProVe Ports ====
 AUTH_PORT=8443
@@ -266,6 +264,9 @@ COMMENT_PORT=3234
 AUTOMATION_PORT=3233
 GATEWAY_PORT=8762
 MANUAL_PORT=8585
+EMAIL_PORT=4234
+# new in version 2.4.0
+DRAFT_PORT=8002
 ```
 
 ## Running a local installation
