@@ -181,6 +181,8 @@ services:
       FRONTEND_SB_LAYOUT:  /css/scientificBoardProskive.css
       APPROVE_EMAIL_URL: ${APPROVE_FRONTEND_URL}
       APPROVE_CLIENT_ID: ${APPROVE_CLIENT_ID}
+      # new in 2.4.0
+      APPROVE_DRAFT_URL: ${APPROVE_DRAFT_URL}
     networks:
      - approve_network
 
@@ -332,6 +334,34 @@ services:
     image: ${MANUAL_IMAGE}
     ports:
       - ${MANUAL_PORT}:8585
+    networks:
+      - approve_network
+
+  # new in version 2.4.0
+  draft-service:
+    restart: always
+    container_name: approve.draft
+    image: ${DRAFT_IMAGE}
+    ports:
+      - ${DRAFT_PORT}:8002
+    environment:
+      APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
+      APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
+      APPROVE_EUREKA: ${EUREKA_URL}
+      EUREKA_PREFER_IP_ADDRESS: "true"
+      EUREKA_IP_ADDRESS: approve.draft
+      INSTANCE_HOSTNAME: DRAFT-SERVICE
+      INSTANCE_PORT: ${DRAFT_PORT}
+      POSTGRES_USER: ${APPROVE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
+      POSTGRES_URL: approve.postgres
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      EUREKA_URL: approve.eureka
+      EUREKA_PORT: ${EUREKA_PORT}
+      CONFIG_URL: approve.config
+      CONFIG_PORT: ${CONFIG_PORT}
+      JAVA_OPTS: "-XX:+UseSerialGC -XX:MaxRAM=1024m"
+      DB_NAME: ${APPROVE_PROJECT_DB}
     networks:
       - approve_network
 
