@@ -383,6 +383,7 @@ $ sudo systemctl restart nginx
 ### Backend NGINX Config
 You have two options for your config. APProVe has the ability to use a gateway service called Zuul.
 In case you don't know which one to use, you can use this routing example without the gateway service.
+In the following we wil use the standard ports. If you changed them in the .env-File you have to change them here accordingly.
 ```bash
 # 1. Navigate to the NGINX folder 
 $ cd /etc/nginx/sites-available/
@@ -404,24 +405,26 @@ server {
     proxy_pass http://localhost:8000;
     }
 
-  location /user/ {
+  location /user-service/ {
      proxy_pass http://localhost:9001/;
     }
 
-  location /automation/ {
+  location /automation-service/ {
     proxy_pass http://localhost:3233/;
   }
 
-  location /comment/ {
+  location /comment-service/ {
     proxy_pass http://localhost:3234/;
   }
-  location /mail/ {
+  location /mail-service/ {
     proxy_pass http://localhost:4234/;
   }
-  location /eureka/ {
+  location /eureka-service/ {
     proxy_pass http://localhost:8761/;
   }
-
+  location /draft-service/ {
+    proxy_pass http://localhost:8761/;
+  }
   location /manual/ {
     proxy_pass http://localhost:8585/manual/;
   }
@@ -442,7 +445,7 @@ $ sudo certbot --nginx -d subdomain3.your-domain.com
 $ sudo systemctl restart nginx
 ```
 
-When using a gateway service, the location paths are different. Please keep in mind, that the gateway is still beeing tested. 
+When using a gateway service, the location paths are different. Please keep in mind, that the gateway is still beeing **tested**. 
 
 ```bash
 # 1. Navigate to the NGINX folder 
