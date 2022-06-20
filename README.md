@@ -91,7 +91,7 @@ Check the line >>Deployed "keycloak-event-listener.jar" (runtime-name : "keycloa
 
 Click [here](#keycloak-configuration) for a detailed explanation.
 
-* When you first run APProVe it is advised to start every service after another to check if a service runs properly. If you want to quickly deploy APProVe you can skip these.
+* When you first run APProVe it is advised to start every service after another to check if a service runs properly. If you want to quickly deploy APProVe you can skip these. Before you can Download the Images, you have to login onto the registry via: ***docker login registry.gitlab.proskive.de***
 
 1. Config-Service stores all config files for the spring-boot services and acts as a centralized config hub. so it should be started before all other spring-boot services
 ```sh
