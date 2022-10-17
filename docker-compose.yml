@@ -289,7 +289,7 @@ services:
     ports:
       - ${AUTOMATION_PORT}:3233
     environment:
-      RULES_PORT: "3233"
+      RULES_PORT: ${AUTOMATION_PORT}
       RULES_HOST:
       MONGO_PORT: ${MONGO_PORT}
       MONGO_HOST: ${MONGO_URL}
