@@ -220,8 +220,6 @@ APPROVE_CLIENT_ID=APProVe-Web
 
 #---------------------------------------------------------------------------------------------------------
 # ==== Frontend URL ====
-# ProSkive-Bio is best used with 3 subdomains.
-# One for Keycloak, one for the frontend and one for the API-Gateway.
 APPROVE_FRONTEND_URL=https://approved.ibdf-frankfurt.de
 
 #---------------------------------------------------------------------------------------------------------
@@ -370,8 +368,6 @@ $ sudo systemctl restart nginx
 ```
 
 ### Backend NGINX Config
-You have two options for your config. APProVe has the ability to use a gateway service called Zuul.
-In case you don't know which one to use, you can use this routing example without the gateway service.
 In the following we wil use the standard ports. If you changed them in the .env-File you have to change them here accordingly.
 ```bash
 # 1. Navigate to the NGINX folder 
@@ -419,7 +415,8 @@ server {
   }
 
 }
-# 3. Change the server_name and the port in the proxy_pass to the previously configured GATEWAY_PORT from the .env
+
+# 3. Change the server_name and the port in the proxy_pass to the previously configured ports from the .env
 
 # 4. Navigate to the sites-enabled folder from NGINX
 $ cd /etc/nginx/sites-enabled/
