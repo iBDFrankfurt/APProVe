@@ -124,37 +124,31 @@ $ docker-compose up -d frontend-service
 $ docker logs approve.frontend
 ```
 
-6. <OPTIONAL> Gateway-Service is optional and connects itself to eureka to receive all registered service endpoints 
-```sh
-$ docker-compose up -d gateway-service
-$ docker logs approve.gateway
-```
-
-7. Mongo Service acts as a non-releational database to save comments/emails/email-templates and automation rules
+6. Mongo Service acts as a non-releational database to save comments/emails/email-templates and automation rules
 ```sh
 $ docker-compose up -d mongo
 $ docker logs approve.mongo
 ```
 
-8. Comment-Service will save/update/delete all comments in all projects
+7. Comment-Service will save/update/delete all comments in all projects
 ```sh
 $ docker-compose up -d comments-service
 $ docker logs approve.comment
 ```
 
-9. Email-Service will save/update/delete all emails and email templates and send emails. You need to connect a mail-server yourself
+8. Email-Service will save/update/delete all emails and email templates and send emails. You need to connect a mail-server yourself
 ```sh
 $ docker-compose up -d mail-service
 $ docker logs approve.mails
 ```
 
-10. Automation-Service will save/update/delete automation rules. These rules can be very complex, please read the APProVe Manual
+9. Automation-Service will save/update/delete automation rules. These rules can be very complex, please read the APProVe Manual
 ```sh
 $ docker-compose up -d automation-service
 $ docker logs approve.automation
 ```
 
-11. Manual-Service will start a manual you can consult before using APProVe
+10. Manual-Service will start a manual you can consult before using APProVe
 ```sh
 $ docker-compose up -d manual-service
 $ docker logs approve.manual
@@ -182,14 +176,14 @@ $ docker-compose down
 
 ## Configuration
 APProVe is configured through environment variables.
-Below is an example how it could look.
+Below is an example.
 ```bash
 #---------------------------------------------------------------------------------------------------------
 # ==== External Images ====
 KEYCLOAK_IMAGE=jboss/keycloak:16.1.1
 MONGO_IMAGE=mongo:3.6
 POSTGRES_IMAGE=postgres:12.7-alpine
-# ==== ProSkive-Bio Images ====
+# ==== APProVe Images ====
 CONFIG_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-config-service:1.5.0
 EUREKA_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-eureka-service:1.7.0
 BACKEND_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-backend-service:2.4.1
@@ -198,7 +192,6 @@ USER_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-user-service:1.2.0
 COMMENT_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-comment-service:1.0.0
 NOTIFICATION_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-email-service:1.0.0
 AUTOMATIOM_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-automation-service:1.0.0
-GATEWAY_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-gateway-service:1.0.0
 MANUAL_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-manual-service:latest
 # new in version 2.4.0
 DRAFT_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-draft-service:0.2.1
@@ -262,7 +255,6 @@ USER_PORT=9001
 EUREKA_PORT=8761
 COMMENT_PORT=3234
 AUTOMATION_PORT=3233
-GATEWAY_PORT=8762
 MANUAL_PORT=8585
 EMAIL_PORT=4234
 # new in version 2.4.0
