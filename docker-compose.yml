@@ -313,7 +313,7 @@ services:
     container_name: approve.manual
     image: ${MANUAL_IMAGE}
     ports:
-      - ${MANUAL_PORT}:8585
+      - ${MANUAL_PORT}:443
     networks:
       - approve_network
 
