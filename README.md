@@ -230,8 +230,6 @@ APPROVE_USER_URL=https://backend.approved.ibdf-frankfurt.de/user-service
 APPROVE_COMMENTS_URL=https://backend.approved.ibdf-frankfurt.de/comment-service
 APPROVE_MANUAL_URL=https://backend.approved.ibdf-frankfurt.de/manual
 APPROVE_MAIL_URL=https://backend.approved.ibdf-frankfurt.de/mail-service
-# new in version 2.4.0
-APPROVE_DRAFT_URL=https://backend.approved.ibdf-frankfurt.de/draft-service
 #---------------------------------------------------------------------------------------------------------
 # ==== Eureka Variables ====
 EUREKA_URL=http://approve.eureka:8761/eureka
