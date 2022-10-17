@@ -437,64 +437,6 @@ $ sudo certbot --nginx -d subdomain3.your-domain.com
 $ sudo systemctl restart nginx
 ```
 
-When using a gateway service, the location paths are different. Please keep in mind, that the gateway is still beeing **tested**. 
-
-```bash
-# 1. Navigate to the NGINX folder 
-$ cd /etc/nginx/sites-available/
-
-# 2. Create the config for the frontend
-$ sudo nano proskive.conf
-
-# 2. Paste the following
-server {
-    server_name gate.cbbmr.proskive.de;
-    proxy_set_header   X-Real-IP $remote_addr;
-    proxy_set_header   X-Scheme $scheme;
-    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header   X-Forwarded-Proto $scheme;
-    proxy_set_header   X-Forwarded-Port $server_port;
-    proxy_set_header   Host $http_host;
-
-    location /manual/ {
-        proxy_pass http://localhost:8585/manual/;
-    }
-    location /mail {
-        proxy_pass http://localhost:8762/mail/;
-    }
-
-    location /user/ {
-        proxy_pass http://localhost:8762/user/;
-    }
-
-    location /project {
-        proxy_pass http://localhost:8762/project/;
-    }
-
-    location /automation {
-        proxy_pass http://localhost:8762/automation/;
-    }
-
-    location /comment {
-        proxy_pass http://localhost:8762/comment/;
-    }
-
-}
-# 3. Change the server_name and the port in the proxy_pass to the previously configured GATEWAY_PORT from the .env
-
-# 4. Navigate to the sites-enabled folder from NGINX
-$ cd /etc/nginx/sites-enabled/
-
-5. Create a symbolic link
-$ sudo ln -s ../sites-available/proskive.conf
-
-6. Run Certbot to generate an encryption
-$ sudo certbot --nginx -d subdomain3.your-domain.com
-
-7. Restart NGINX
-$ sudo systemctl restart nginx
-```
-AS you can see, instead of calling the local address of each service, you call the gateway service that will do the routing for you.
 
 ## Keycloak Configuration
 Navigate to http://localhost:<AUTH_PORT> or https://subdomain1.your-domain.com
