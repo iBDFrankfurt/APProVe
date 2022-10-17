@@ -305,27 +305,7 @@ services:
     networks:
       - approve_network
 
-  gateway-service:
-    #-------------------------------------------------------------------------------------
-    # ==== STILL BETA ====
-    # ==== Redirects calls to the corresponding service ====
-    #-------------------------------------------------------------------------------------
-    container_name: approve.gateway
-    image: ${GATEWAY_IMAGE}
-    ports:
-      - ${GATEWAY_PORT}:8762
-    environment:
-      EUREKA_URL: approve.eureka
-      EUREKA_PORT: ${EUREKA_PORT}
-      CONFIG_URL: approve.config
-      CONFIG_PORT: ${CONFIG_PORT}
-      APPROVE_EUREKA: ${EUREKA_URL}
-      EUREKA_PREFER_IP_ADDRESS: "true"
-      EUREKA_IP_ADDRESS: gateway-service
-      INSTANCE_HOSTNAME: gateway-service
-    networks:
-     - approve_network
-
+  
   manual-service:
     #-------------------------------------------------------------------------------------
     # ==== Every APProVe instance get's its own manual ====
@@ -337,33 +317,6 @@ services:
     networks:
       - approve_network
 
-  # new in version 2.4.0
-  draft-service:
-    restart: always
-    container_name: approve.draft
-    image: ${DRAFT_IMAGE}
-    ports:
-      - ${DRAFT_PORT}:8002
-    environment:
-      APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
-      APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
-      APPROVE_EUREKA: ${EUREKA_URL}
-      EUREKA_PREFER_IP_ADDRESS: "true"
-      EUREKA_IP_ADDRESS: approve.draft
-      INSTANCE_HOSTNAME: DRAFT-SERVICE
-      INSTANCE_PORT: ${DRAFT_PORT}
-      POSTGRES_USER: ${APPROVE_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
-      POSTGRES_URL: approve.postgres
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      EUREKA_URL: approve.eureka
-      EUREKA_PORT: ${EUREKA_PORT}
-      CONFIG_URL: approve.config
-      CONFIG_PORT: ${CONFIG_PORT}
-      JAVA_OPTS: "-XX:+UseSerialGC -XX:MaxRAM=1024m"
-      DB_NAME: ${APPROVE_PROJECT_DB}
-    networks:
-      - approve_network
 
 networks:
   approve_network:
