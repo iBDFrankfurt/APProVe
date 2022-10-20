@@ -236,6 +236,7 @@ services:
     #-------------------------------------------------------------------------------------
     # ==== Mainly CRUD service in golang for comments ====
     #-------------------------------------------------------------------------------------
+    restart: always
     image: ${COMMENT_IMAGE}
     container_name: approve.comment
     ports:
@@ -260,6 +261,7 @@ services:
     #-------------------------------------------------------------------------------------
     # ==== Mainly CRUD service in golang for emails and templates ====
     #-------------------------------------------------------------------------------------
+    restart: always
     image: ${EMAIL_IMAGE}
     container_name: approve.mails
     ports:
@@ -284,6 +286,7 @@ services:
     #-------------------------------------------------------------------------------------
     # ==== Mainly CRUD service in golang for project based automation ====
     #-------------------------------------------------------------------------------------
+    restart: always
     container_name: approve.automation
     image: ${AUTOMATIOM_IMAGE}
     ports:
@@ -310,6 +313,7 @@ services:
     #-------------------------------------------------------------------------------------
     # ==== Every APProVe instance get's its own manual ====
     #-------------------------------------------------------------------------------------
+    restart: always
     container_name: approve.manual
     image: ${MANUAL_IMAGE}
     ports:
