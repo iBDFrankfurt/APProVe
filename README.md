@@ -107,62 +107,62 @@ $ docker login registry.gitlab.proskive.de
 1. Config-Service stores all config files for the spring-boot services and acts as a centralized config hub. so it should be started before all other spring-boot services
 ```sh
 $ docker-compose up -d config-service
-$ docker logs approve.config
+$ docker logs approve.config -f
 ```
 
 2. Eureka-Service acts as a registration for every service. It allows communication between each service and can store stats about those.
 ```sh
 $ docker-compose up -d eureka-service
-$ docker logs approve.eureka
+$ docker logs approve.eureka -f
 ```
 
 3. Backend-Service stores all project related data and migrates the database to the postgres service
 ```sh
 $ docker-compose up -d backend-service
-$ docker logs approve.backend
+$ docker logs approve.backend -f
 ```
 You should see in the backend-service logs that the migration of the database started.
 
 4. User-Service acts as a middle man between the frontend and keycloak
 ```sh
 $ docker-compose up -d user-service
-$ docker logs approve.user
+$ docker logs approve.user -f
 ```
 
 5. Frontend-Service acts as the frontend of APProVe 
 ```sh
 $ docker-compose up -d frontend-service
-$ docker logs approve.frontend
+$ docker logs approve.frontend -f
 ```
 
 6. Mongo Service acts as a non-releational database to save comments/emails/email-templates and automation rules
 ```sh
 $ docker-compose up -d mongo
-$ docker logs approve.mongo
+$ docker logs approve.mongo -f
 ```
 
 7. Comment-Service will save/update/delete all comments in all projects
 ```sh
 $ docker-compose up -d comments-service
-$ docker logs approve.comment
+$ docker logs approve.comment -f
 ```
 
 8. Email-Service will save/update/delete all emails and email templates and send emails. You need to connect a mail-server yourself
 ```sh
 $ docker-compose up -d mail-service
-$ docker logs approve.mails
+$ docker logs approve.mails -f
 ```
 
 9. Automation-Service will save/update/delete automation rules. These rules can be very complex, please read the APProVe Manual
 ```sh
 $ docker-compose up -d automation-service
-$ docker logs approve.automation
+$ docker logs approve.automation -f
 ```
 
 10. Manual-Service will start a manual you can consult before using APProVe
 ```sh
 $ docker-compose up -d manual-service
-$ docker logs approve.manual
+$ docker logs approve.manual -f
 ```
 
 
