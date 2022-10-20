@@ -101,7 +101,7 @@ Click [here](#keycloak-configuration) for a detailed explanation.
 ### Run APProVe
 * When you first run APProVe it is advised to start every service after another to check if a service runs properly. If you want to quickly deploy APProVe you can skip these. Before you can Download the Images, you have to login onto the registry via: 
 ```sh
-docker login registry.gitlab.proskive.de
+$ docker login registry.gitlab.proskive.de
 ```
 
 1. Config-Service stores all config files for the spring-boot services and acts as a centralized config hub. so it should be started before all other spring-boot services
