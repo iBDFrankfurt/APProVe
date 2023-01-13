@@ -37,9 +37,9 @@ APProVe is the first software to digitally and transparently map the application
 7. assignment of project-related to-dos for the biobank members
 8. Tabular summary of projects in tiles based on various criteria for a better overview
 
-## Changelogs
-Every Instance gets their own Manual-Service. Not only does it container useful information about managing and using APProVE, it also contains the changelogs.
-If you have no running Manual-Service you can check the newest Changelogs and Manual at: [Manual-Develop](https://backend.approved.ibdf-frankfurt.de/manual/updates/)
+## Changelogs and Documentation
+Every Instance gets their own Manual-Service. Not only does it container useful information about managing and using APProVe, it also contains the changelogs.
+If you have no running Manual-Service you can check the newest changelogs and documentation at: [Manual-Develop](https://backend.approved.ibdf-frankfurt.de/manual/updates/)
 
 Please keep in mind, that a few versions are unreleased or still being tested and made public later.
 
