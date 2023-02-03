@@ -176,9 +176,8 @@ services:
       INSTANCE_HOSTNAME: PROJECT-WEB-SERVICE
       EUREKA_PREFER_IP_ADDRESS: "true"
       EUREKA_IP_ADDRESS: approve.frontend
-      FRONTEND_USER_LAYOUT: /css/proskive.css
-      FRONTEND_ADMIN_LAYOUT: /css/demoProskive.css
-      FRONTEND_SB_LAYOUT:  /css/scientificBoardProskive.css
+      FRONTEND_USER_LAYOUT: /css/approve-admin.css
+      FRONTEND_ADMIN_LAYOUT: /css/approve-main.css
       APPROVE_EMAIL_URL: ${APPROVE_FRONTEND_URL}
       APPROVE_CLIENT_ID: ${APPROVE_CLIENT_ID}
       APPROVE_DRAFT_URL: ${APPROVE_DRAFT_URL}
