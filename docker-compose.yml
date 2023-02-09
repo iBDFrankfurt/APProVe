@@ -29,15 +29,20 @@ services:
     container_name: approve.auth
     image: ${KEYCLOAK_IMAGE}
     ports:
-      - 8080:8080
-      - ${AUTH_PORT}:8443
+      - ${AUTH_PORT}:8080
+    entrypoint: /opt/keycloak/bin/kc.sh start
     environment:
-      DB_ADDR: approve.postgres
-      DB_DATABASE: ${APPROVE_AUTH_DB}
-      DB_USER: ${APPROVE_POSTGRES_USER}
-      DB_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
-      KEYCLOAK_USER: ${APPROVE_KEYCLOAK_ADMIN_USER}
-      KEYCLOAK_PASSWORD: ${APPROVE_KEYCLOAK_ADMIN_PASSWORD}
+      KC_DB: postgres
+      KC_DB_URL_DATABASE: ${APPROVE_AUTH_DB}
+      KC_DB_URL_HOST: approve.postgres
+      KC_DB_USERNAME: ${APPROVE_POSTGRES_USER}
+      KC_DB_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
+      KEYCLOAK_ADMIN:  ${APPROVE_KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_ADMIN_PASSWORD: ${APPROVE_KEYCLOAK_ADMIN_PASSWORD}
+      PROXY_ADDRESS_FORWARDING: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY: "edge"
       REST_USER: ${KEYCLOAK_USER_NAME}
       REST_PASSWORD: ${KEYCLOAK_USER_PASSWORD}
       CLIENT_ID: ${KEYCLOAK_REST_CLIENT_ID}
@@ -176,8 +181,8 @@ services:
       INSTANCE_HOSTNAME: PROJECT-WEB-SERVICE
       EUREKA_PREFER_IP_ADDRESS: "true"
       EUREKA_IP_ADDRESS: approve.frontend
-      FRONTEND_USER_LAYOUT: /css/approve-admin.css
-      FRONTEND_ADMIN_LAYOUT: /css/approve-main.css
+      FRONTEND_USER_LAYOUT: /css/approve-main.css
+      FRONTEND_ADMIN_LAYOUT: /css/approve-admin.css
       APPROVE_EMAIL_URL: ${APPROVE_FRONTEND_URL}
       APPROVE_CLIENT_ID: ${APPROVE_CLIENT_ID}
       APPROVE_DRAFT_URL: ${APPROVE_DRAFT_URL}
