@@ -187,83 +187,8 @@ $ docker-compose down
 
 ## Configuration
 APProVe is configured through environment variables.
-Below is an example.
-```bash
-#---------------------------------------------------------------------------------------------------------
-# ==== External Images ====
-KEYCLOAK_IMAGE=jboss/keycloak:16.1.1
-MONGO_IMAGE=mongo:3.6
-POSTGRES_IMAGE=postgres:12.7-alpine
-# ==== APProVe Images ====
-CONFIG_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-config-service:1.5.0
-EUREKA_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-eureka-service:1.7.0
-BACKEND_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-backend-service:2.5.3
-FRONTEND_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-frontend-service:2.5.3
-USER_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-user-service:1.2.0
-COMMENT_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-comment-service:1.0.0
-EMAIL_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-email-service:1.1.0
-AUTOMATIOM_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-automation-service:1.1.0
-MANUAL_IMAGE=registry.gitlab.proskive.de/uct/open-approve/uct-manual-service-v2:latest
+Check the .env-Example file.
 
-#---------------------------------------------------------------------------------------------------------
-# ==== Postgres Variables ====
-APPROVE_POSTGRES_USER=approve_user
-APPROVE_POSTGRES_PASSWORD=approve_password
-# Create default database for keycloak
-APPROVE_AUTH_DB=approve_auth
-APPROVE_PROJECT_DB=approve_backend
-
-#---------------------------------------------------------------------------------------------------------
-# ==== Mongo Variables ====
-APPROVE_MONGO_USER=approve_user
-APPROVE_MONGO_PASSWORD=approve_password!
-MONGO_URL=mongodb://approve.mongo
-
-#---------------------------------------------------------------------------------------------------------
-# ==== Keycloak Variables ====
-KEYCLOAK_REALM_NAME=UCT
-APPROVE_KEYCLOAK_ADMIN_USER=admin
-APPROVE_KEYCLOAK_ADMIN_PASSWORD=aSecretONE_
-APPROVE_KEYCLOAK_URL=https://auth.approved.ibdf-frankfurt.de/auth
-APPROVE_CLIENT_ID=APProVe-Web
-
-#---------------------------------------------------------------------------------------------------------
-# ==== Frontend URL ====
-APPROVE_FRONTEND_URL=https://approved.ibdf-frankfurt.de
-
-#---------------------------------------------------------------------------------------------------------
-# ==== Backend URL's ====
-APPROVE_BACKEND_URL=https://backend.approved.ibdf-frankfurt.de
-APPROVE_AUTOMATION_URL=https://backend.approved.ibdf-frankfurt.de/automation-service
-APPROVE_USER_URL=https://backend.approved.ibdf-frankfurt.de/user-service
-APPROVE_COMMENTS_URL=https://backend.approved.ibdf-frankfurt.de/comment-service
-APPROVE_MANUAL_URL=https://backend.approved.ibdf-frankfurt.de/manual
-APPROVE_MAIL_URL=https://backend.approved.ibdf-frankfurt.de/mail-service
-#---------------------------------------------------------------------------------------------------------
-# ==== Eureka Variables ====
-EUREKA_URL=http://approve.eureka:8761/eureka
-#---------------------------------------------------------------------------------------------------------
-# ==== User-Service Variables ====
-# !this user needs to be created in keycloak!
-KEYCLOAK_USER_NAME=restuser
-KEYCLOAK_USER_PASSWORD=restuser
-PROSKIVE_FRONTEND_LAYOUT=demoLayout
-KEYCLOAK_REST_CLIENT_ID=APProVe-Web
-#---------------------------------------------------------------------------------------------------------
-# ==== APProVe Ports ====
-AUTH_PORT=8443
-MONGO_PORT=27017
-POSTGRES_PORT=5432
-CONFIG_PORT=8888
-BACKEND_PORT=8000
-FRONTEND_PORT=8001
-USER_PORT=9001
-EUREKA_PORT=8761
-COMMENT_PORT=3234
-AUTOMATION_PORT=3233
-MANUAL_PORT=8585
-EMAIL_PORT=4234
-```
 
 ## Running a local installation
 In order to run APProVE on the local machine, you have to route via the docker internal host. This is because you will access your application with a browser on your machine (which name is localhost, or 127.0.0.1), but inside Docker it will run in its own container, which name is  host.docker.internal. If you would run it on a server the reverse proxy would do the trick for it. Locally it is easier to use the docker host.
