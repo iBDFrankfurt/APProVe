@@ -30,6 +30,10 @@ The minimal deployment to run APProVe consists of
 * Multi-core processor (e.g. Intel i5)
 * 500 MB hard disk space
 
+## What it does
+Creating a basic deployment with needed services (user and manual is optional, but for the sake of not printing to many errors i added them).
+It will also create a Realm ``test`` in Keycloak and add the Keycloak SPI automatically.
+
 
 ## Instructions
 Clone this folder. Your folder should consist of
