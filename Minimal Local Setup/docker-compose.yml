@@ -1,0 +1,191 @@
+version: '3'
+services:
+  auth:
+    #-------------------------------------------------------------------------------------
+    # ==== Keycloak ====
+    #-------------------------------------------------------------------------------------
+    restart: always
+    container_name: approve.auth
+    image: ${KEYCLOAK_IMAGE}
+    ports:
+      - 8080:8080
+    entrypoint: /opt/keycloak/bin/kc.sh start --hostname-url=http://localhost:8080
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_DATABASE: ${APPROVE_AUTH_DB}
+      KC_DB_URL_HOST: approve.postgres
+      KC_DB_USERNAME: ${APPROVE_POSTGRES_USER}
+      KC_DB_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
+      KEYCLOAK_ADMIN:  ${APPROVE_KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_ADMIN_PASSWORD: ${APPROVE_KEYCLOAK_ADMIN_PASSWORD}
+      #PROXY_ADDRESS_FORWARDING: "true"
+      #KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      #KC_PROXY: "edge"
+      REST_USER: ${KEYCLOAK_USER_NAME}
+      REST_PASSWORD: ${KEYCLOAK_USER_PASSWORD}
+      CLIENT_ID: ${KEYCLOAK_REST_CLIENT_ID}
+      GRANT_TYPE: password
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM_NAME}
+      KEYCLOAK_URL: ${APPROVE_KEYCLOAK_URL}
+      BACKEND_SERVICE_URL: ${APPROVE_BACKEND_URL}
+    volumes:
+    #-------------------------------------------------------------------------------------
+    # ==== Create and add your own login Theme and paste it like this ====
+    #-------------------------------------------------------------------------------------
+      #- "path/to/your/theme:/opt/jboss/keycloak/themes/"
+    #-------------------------------------------------------------------------------------
+    # ==== Folder needs 777 rights for keycloak: see README====
+    #-------------------------------------------------------------------------------------
+      - "./keycloak-event-listener/target/:/opt/keycloak/providers/"
+    depends_on:
+      - postgres
+    networks:
+      - approve_network
+
+  postgres:
+    #-------------------------------------------------------------------------------------
+    # ==== Database for project based objects ====
+    #-------------------------------------------------------------------------------------
+    restart: always
+    container_name: approve.postgres
+    image: ${POSTGRES_IMAGE}
+    expose:
+      - ${POSTGRES_PORT}
+    ports:
+      - ${POSTGRES_PORT}:5432
+    environment:
+      POSTGRES_USER: ${APPROVE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${APPROVE_AUTH_DB}
+    volumes:
+      - ".postgres_data:/var/lib/postgresql/data"
+    networks:
+      - approve_network
+
+  config-service:
+    #-------------------------------------------------------------------------------------
+    # ==== ENV Configurations for spring boot ====
+    #-------------------------------------------------------------------------------------
+    restart: always
+    container_name: approve.config
+    image: ${CONFIG_IMAGE}
+    ports:
+      - ${CONFIG_PORT}:8888
+    networks:
+      - approve_network
+
+  backend-service:
+    #-------------------------------------------------------------------------------------
+    # ==== Project based service for APProVe, mainly handles project creation/editing ====
+    #-------------------------------------------------------------------------------------
+    container_name: approve.backend
+    restart: always
+    image: ${BACKEND_IMAGE}
+    ports:
+     - ${BACKEND_PORT}:8000
+    environment:
+      # Keycloak variables 
+      APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
+      APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
+      # Eureka variables
+      APPROVE_EUREKA: ${EUREKA_URL}
+      EUREKA_PREFER_IP_ADDRESS: "true"
+      EUREKA_IP_ADDRESS: approve.backend
+      INSTANCE_HOSTNAME: PROJECT-SERVICE
+      EUREKA_URL: approve.eureka
+      EUREKA_PORT: ${EUREKA_PORT}
+      # Postgres variables
+      POSTGRES_USER: ${APPROVE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
+      POSTGRES_URL: approve.postgres
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      DB_NAME: ${APPROVE_PROJECT_DB}
+      # Config-Service variables
+      CONFIG_URL: approve.config
+      CONFIG_PORT: ${CONFIG_PORT}
+
+      APPROVE_FRONTEND_URL: ${APPROVE_FRONTEND_URL}
+      JAVA_OPTS: "-XX:+UseSerialGC -XX:MaxRAM=1024m"
+    depends_on:
+      - postgres
+    networks:
+      - approve_network
+
+  frontend-service:
+    #-------------------------------------------------------------------------------------
+    # ==== Spring Boot frontend with integrated vuejs bundle ====
+    #-------------------------------------------------------------------------------------
+    container_name: approve.frontend
+    restart: always
+    image: ${FRONTEND_IMAGE}
+    ports:
+     - ${FRONTEND_PORT}:8001
+    environment:
+      #Startup Variables
+      APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
+      APPROVE_EUREKA: ${EUREKA_URL}
+      EUREKA_URL: approve.eureka
+      EUREKA_PORT: ${EUREKA_PORT}
+      CONFIG_URL: approve.config
+      CONFIG_PORT: ${CONFIG_PORT}
+      APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
+      APPROVE_KEYCLOAK_URL: ${APPROVE_KEYCLOAK_URL}
+      # Backend URLS
+      APPROVE_SELF_URL: ${APPROVE_FRONTEND_URL}
+      APPROVE_BACKEND_URL: ${APPROVE_BACKEND_URL}
+      APPROVE_USER_URL: ${APPROVE_USER_URL}
+      APPROVE_COMMENTS_URL: ${APPROVE_COMMENTS_URL}
+      APPROVE_AUTOMATION_URL: ${APPROVE_AUTOMATION_URL}
+      APPROVE_MAIL_URL: ${APPROVE_MAIL_URL}
+      MANUAL_URL: ${APPROVE_MANUAL_URL}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: approve.eureka:8761
+      INSTANCE_HOSTNAME: PROJECT-WEB-SERVICE
+      EUREKA_PREFER_IP_ADDRESS: "true"
+      EUREKA_IP_ADDRESS: approve.frontend
+      FRONTEND_USER_LAYOUT: /css/approve-main.css
+      FRONTEND_ADMIN_LAYOUT: /css/approve-admin.css
+      APPROVE_EMAIL_URL: ${APPROVE_FRONTEND_URL}
+      APPROVE_CLIENT_ID: ${APPROVE_CLIENT_ID}
+      APPROVE_DRAFT_URL: ${APPROVE_DRAFT_URL}
+      APPROVE_IMPORT_URL: ${APPROVE_IMPORT_URL}
+    networks:
+     - approve_network
+
+
+  eureka-service:
+    #-------------------------------------------------------------------------------------
+    # ==== Service Registry for backends ====
+    #-------------------------------------------------------------------------------------
+    restart: always
+    container_name: approve.eureka
+    image: ${EUREKA_IMAGE}
+    ports:
+      - ${EUREKA_PORT}:8761
+    environment:
+      EUREKA_PORT: ${EUREKA_PORT}
+      CONFIG_PORT: ${CONFIG_PORT}
+      CONFIG_URL: config-service
+      JAVA_OPTS: "-XX:+UseSerialGC -XX:MaxRAM=512m"
+    depends_on:
+      - config-service
+    networks:
+      - approve_network
+
+  manual-service:
+    #-------------------------------------------------------------------------------------
+    # ==== Every APProVe instance get's its own manual ====
+    #-------------------------------------------------------------------------------------
+    restart: always
+    container_name: approve.manual
+    image: ${MANUAL_IMAGE}
+    ports:
+      - ${MANUAL_PORT}:443
+    networks:
+      - approve_network
+
+
+networks:
+  approve_network:
+    external:
+      name: approve_network
