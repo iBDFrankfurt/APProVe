@@ -120,14 +120,22 @@ Head over to ``Users`` again and add a new user. Please add an email as well, as
 Do not forget to set credentials as well!
 After creating the user you can add him to our Admin Role which we created in the step before.
 
-### Notes
+### Login
+After creating you Admin user the backend should already have the information send by Keycloak, so you can type in to your Browser
+```
+http://localhost:8001
+```
+And click in ``Anmelden``. You should be redirected to Keycloak and be able to login with your APProVe admin user.
+After login you should be at the ``APProVe Dashboard`` with an orange layout indicating you are an admin.
+
+## Notes
 After we created the Restuser every create/update/delete event in Keycloak will trigger an event in APProVe.
 You can check your logs if your admin user was created in APProVe by checking the approve.backend logs via
 ```sh
 $ docker logs approve.backend -f
 ```
 
-### Limitations
+## Limitations
 Currently, i was not able to change the Keycloak URl to a different port, so 8080 should be free before a local 
 deployment.
 Using the hosts file to imitate localhost calls will be fixed in the future.
