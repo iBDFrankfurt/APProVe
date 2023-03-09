@@ -7,14 +7,10 @@
 
 This guide will lead you to the minimal local deployment of APProVe. Some connection have to be changed in order to run the docker 
 deployment locally. 
-The minimal deployment to run APProVe consists of
-1. Config-Service
-2. Eureka-Service
-3. Postgres
-4. Keycloak
-5. Frontend-Service
-6. Backend-Service
-7. User-Service
+
+
+**This is the complete deployment, if you want to test your System first please refer to [Minimal Deployment Guide](https://gitlab.proskive.de/uct/open-approve/-/tree/master/minimal-local-setup)**
+
 
 [[_TOC_]]
 
@@ -74,6 +70,11 @@ And add these entries:
 127.0.0.1 approve.auth
 127.0.0.1 approve.user
 127.0.0.1 approve.frontend
+127.0.0.1 approve.comment
+127.0.0.1 approve.mails
+127.0.0.1 approve.automation
+127.0.0.1 approve.import
+127.0.0.1 approve.draft
 ```
 After that we can use the container_name in APProVe as localhost.
 

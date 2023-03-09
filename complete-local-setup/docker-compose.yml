@@ -27,7 +27,7 @@ services:
       CLIENT_ID: ${KEYCLOAK_REST_CLIENT_ID}
       GRANT_TYPE: password
       KEYCLOAK_REALM: ${KEYCLOAK_REALM_NAME}
-      KEYCLOAK_URL: http://localhost:8080
+      KEYCLOAK_URL: ${APPROVE_KEYCLOAK_URL}
       BACKEND_SERVICE_URL: http://approve.backend:8000
     volumes:
     #-------------------------------------------------------------------------------------
