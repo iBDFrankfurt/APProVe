@@ -191,6 +191,10 @@ Check the .env-Example file.
 
 
 ## Running a local installation
+If you want to run APProVe locally head over to our separate guides at [Minimal Demo Deployment](https://gitlab.proskive.de/uct/open-approve/-/tree/master/minimal-local-setup) or
+[Complete Demo Deployment](https://gitlab.proskive.de/uct/open-approve/-/tree/master/complete-local-setup).
+
+Or you can check this guide:
 In order to run APProVE on the local machine, you have to route via the docker internal host. This is because you will access your application with a browser on your machine (which name is localhost, or 127.0.0.1), but inside Docker it will run in its own container, which name is  host.docker.internal. If you would run it on a server the reverse proxy would do the trick for it. Locally it is easier to use the docker host.
 To make things work, you’ll need to make sure to have the following line added to your hosts file (/etc/hosts on Mac/Linux, c:\Windows\System32\Drivers\etc\hosts on Windows).
 It should be there by default after installing docker.
