@@ -2,11 +2,11 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=intellij
 
 ### Postgres and Mongo
-.complete-local-setup/.mongo_data
-.complete-local-setup/.postgres_data
+complete-local-setup/.mongo_data
+complete-local-setup/.postgres_data
 
-.minimal-local-setup/.mongo_data
-.minimal-local-setup/.postgres_data
+minimal-local-setup/.mongo_data
+minimal-local-setup/.postgres_data
 
 ### Intellij ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider
