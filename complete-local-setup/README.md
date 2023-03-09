@@ -1,0 +1,134 @@
+<div align="center">
+  <b>APProVe <sup>by iBDF</sup></b>
+  <br>
+</div>
+<br>
+<br>
+
+This guide will lead you to the minimal local deployment of APProVe. Some connection have to be changed in order to run the docker 
+deployment locally. 
+The minimal deployment to run APProVe consists of
+1. Config-Service
+2. Eureka-Service
+3. Postgres
+4. Keycloak
+5. Frontend-Service
+6. Backend-Service
+7. User-Service
+
+[[_TOC_]]
+
+
+<p align="center">
+  <a href="#">
+    <img src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/Project_management-APProVe_en.png" alt="WorkFlow" style="height: 120px; width: 120px">
+  </a>
+</p>
+
+## System Requirements
+* RAM 6GB
+* Multi-core processor (e.g. Intel i5)
+* 500 MB hard disk space
+
+
+## Instructions
+Clone this folder. Your folder should consist of
+1. keycloak-event-listener
+2. .env
+3. docker-compose.yml
+4. test-realm.json
+
+### Login to registry
+
+```sh
+$ docker login registry.gitlab.proskive.de
+```
+
+### Pull Images from Repo
+
+```sh
+$ docker-compose pull
+```
+
+### Start Images
+
+```sh
+$ docker-compose up -d
+```
+On windows postgres sometimes prints errors. You should be able to ignore it until postgres finished. In the
+meantime the backend may print errors as well with no connection possible to postgres. This will be handled automatically, it is enough to wait some time.
+
+
+### Edit your hosts file
+In order to run the network with localhost you must edit your hosts file.
+(/etc/hosts on Mac/Linux, c:\Windows\System32\Drivers\etc\hosts on Windows)
+
+And add these entries:
+
+```yml
+127.0.0.1 approve.backend
+127.0.0.1 approve.auth
+127.0.0.1 approve.user
+127.0.0.1 approve.frontend
+```
+After that we can use the container_name in APProVe as localhost.
+
+### Setup Keycloak
+Type in your Browser
+```
+http://localhost:8080
+```
+Which should open Keycloak. You can login with the credentials from the .env-file
+```
+APPROVE_KEYCLOAK_ADMIN_USER=adminuser
+APPROVE_KEYCLOAK_ADMIN_PASSWORD=adminpass
+```
+
+After successfully login in, you can create a new Realm and import the 
+```
+test-realm.json
+```
+This creates a new Realm ``test`` with the Client already configured and the event listener deployed automatically.
+
+### Add rest user in Keycloak
+Create a new User that handles communication with the backend and Keycloak named
+``restuser``. This is the same user as in the ``.env-file``
+```
+KEYCLOAK_USER_NAME=restuser
+KEYCLOAK_USER_PASSWORD=restuser_pass
+```
+Do not forget to set his credentials as well.
+
+Next, assign a specific role for this user. This user should be able to call all users, realms, groups and roles. So
+you can head over to the ``Role mapping`` in the user details of the ``restuser`` and assign the role ``realm-management realm-admin``.
+
+After that the backend and Keycloak can communicate.
+
+### Add Admin Role in Keycloak for APProVe
+We need to add an admin user for APProVe. Head over to the ``Realm roles`` first in Keycloak and add a new Role.
+This role will be our Admin Role. Name it whatever you like. The important part are the Attributes.
+If you created a new Role you can open the Role details and head over to ``Attributes``.
+Add the following:
+````
+Key: is_admin
+Value: true
+````
+and hit save.
+
+### Add Admin User in Keycloak for APProVe
+Head over to ``Users`` again and add a new user. Please add an email as well, as this is a required field in APProVe but not in Keycloak.
+Do not forget to set credentials as well!
+After creating the user you can add him to our Admin Role which we created in the step before.
+
+### Notes
+After we created the Restuser every create/update/delete event in Keycloak will trigger an event in APProVe.
+You can check your logs if your admin user was created in APProVe by checking the approve.backend logs via
+```sh
+$ docker logs approve.backend -f
+```
+
+### Limitations
+Currently, i was not able to change the Keycloak URl to a different port, so 8080 should be free before a local 
+deployment.
+Using the hosts file to imitate localhost calls will be fixed in the future.
+
