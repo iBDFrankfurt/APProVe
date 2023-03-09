@@ -28,7 +28,7 @@ services:
       GRANT_TYPE: password
       KEYCLOAK_REALM: ${KEYCLOAK_REALM_NAME}
       KEYCLOAK_URL: ${APPROVE_KEYCLOAK_URL}
-      BACKEND_SERVICE_URL: ${APPROVE_BACKEND_URL}
+      BACKEND_SERVICE_URL: http://approve.backend:8000
     volumes:
     #-------------------------------------------------------------------------------------
     # ==== Create and add your own login Theme and paste it like this ====
@@ -184,6 +184,32 @@ services:
     networks:
       - approve_network
 
+  user-service:
+    #-------------------------------------------------------------------------------------
+    # ==== Checks users and roles in keycloak ====
+    #-------------------------------------------------------------------------------------
+    restart: always
+    container_name: approve.user
+    image: ${USER_IMAGE}
+    environment:
+      APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
+      EUREKA_URL: approve.eureka
+      EUREKA_PORT: ${EUREKA_PORT}
+      CONFIG_URL: approve.config
+      CONFIG_PORT: ${CONFIG_PORT}
+      APPROVE_EUREKA: ${EUREKA_URL}
+      INSTANCE_HOSTNAME: USER-SERVICE
+      EUREKA_PREFER_IP_ADDRESS: "true"
+      EUREKA_IP_ADDRESS: approve.user
+      APPROVE_KEYCLOAK_USER_NAME: ${KEYCLOAK_USER_NAME}
+      APPROVE_KEYCLOAK_USER_PASSWORD: ${KEYCLOAK_USER_PASSWORD}
+      # General
+      APPROVE_KEYCLOAK_CLIENTID: ${APPROVE_CLIENT_ID}
+      APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
+    ports:
+      - ${USER_PORT}:9001
+    networks:
+      - approve_network
 
 networks:
   approve_network:

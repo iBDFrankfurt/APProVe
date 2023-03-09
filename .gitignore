@@ -1,0 +1,3 @@
+complete-local-setup/.mongo_data/
+complete-local-setup/.postgres_data/
+minimal-local-setup/.postgres_data/
