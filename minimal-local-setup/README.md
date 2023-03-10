@@ -106,6 +106,33 @@ Do not forget to set his credentials as well.
 Next, assign a specific role for this user. This user should be able to call all users, realms, groups and roles. So
 you can head over to the ``Role mapping`` in the user details of the ``restuser`` and assign the role ``realm-management realm-admin``.
 
+<figure>
+  <div>
+    <label for="role-mapping">
+    <img id="role-mapping" src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/keycloak/role-mapping.png" alt="Role mappings of user">
+    </label>
+      <figcaption>Role mappings of user overview</figcaption>
+  </div>
+</figure>
+
+<figure>
+  <div>
+    <label for="role-mapping">
+    <img id="role-mapping" src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/keycloak/role-mapping2.png" alt="Role mappings of user">
+    </label>
+      <figcaption>Role mappings of user</figcaption>
+  </div>
+</figure>
+
+<figure>
+  <div>
+    <label for="role-mapping">
+    <img id="role-mapping" src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/keycloak/role-mapping3.png" alt="Role mappings of user">
+    </label>
+      <figcaption>Role mappings of user</figcaption>
+  </div>
+</figure>
+
 After that the backend and Keycloak can communicate.
 
 ### Add Admin Role in Keycloak for APProVe
@@ -126,13 +153,14 @@ Head over to ``Users`` again and add a new user. Please add an email as well, as
 Do not forget to set credentials as well!
 After creating the user you can add him to our Admin Role which we created in the step before.
 
+
 ### Login
 After creating you Admin user the backend should already have the information send by Keycloak, so you can type in to your Browser
 ```
 http://localhost:8001
 ```
 And click in ``Anmelden``. You should be redirected to Keycloak and be able to login with your APProVe admin user.
-After login you should be at the ``APProVe Dashboard`` with an orange layout indicating you are an admin.
+After logging in you should be at the ``APProVe Dashboard`` with an orange layout indicating you are an admin.
 
 ## Notes
 After we created the Restuser every create/update/delete event in Keycloak will trigger an event in APProVe.

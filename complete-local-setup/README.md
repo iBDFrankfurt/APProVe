@@ -109,6 +109,33 @@ you can head over to the ``Role mapping`` in the user details of the ``restuser`
 
 After that the backend and Keycloak can communicate.
 
+<figure>
+  <div>
+    <label for="role-mapping">
+    <img id="role-mapping" src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/keycloak/role-mapping.png" alt="Role mappings of user">
+    </label>
+      <figcaption>Role mappings of user overview</figcaption>
+  </div>
+</figure>
+
+<figure>
+  <div>
+    <label for="role-mapping">
+    <img id="role-mapping" src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/keycloak/role-mapping2.png" alt="Role mappings of user">
+    </label>
+      <figcaption>Role mappings of user</figcaption>
+  </div>
+</figure>
+
+<figure>
+  <div>
+    <label for="role-mapping">
+    <img id="role-mapping" src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/keycloak/role-mapping3.png" alt="Role mappings of user">
+    </label>
+      <figcaption>Role mappings of user</figcaption>
+  </div>
+</figure>
+
 ### Add Admin Role in Keycloak for APProVe
 We need to add an admin user for APProVe. Head over to the ``Realm roles`` first in Keycloak and add a new Role.
 This role will be our Admin Role. Name it whatever you like. The important part are the Attributes.
