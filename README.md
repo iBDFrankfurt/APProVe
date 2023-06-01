@@ -15,7 +15,7 @@ APProVe is a software developed by the Interdisciplinary Biomaterials and Databa
 
 <p align="center">
   <a href="#">
-    <img src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/Project_management-APProVe_en.png" alt="WorkFlow" style="height: 120px; width: 120px">
+    <img src="https://gitlab.ibdf-frankfurt.de.de/uct/open-approve/-/raw/master/img/Project_management-APProVe_en.png" alt="WorkFlow" style="height: 120px; width: 120px">
   </a>
 </p>
 
@@ -54,7 +54,7 @@ git --version
 
 * Clone this repository
 ```sh
-$ git clone https://gitlab.proskive.de/uct/open-approve.git
+$ git clone https://gitlab.ibdf-frankfurt.de.de/uct/open-approve.git
 ```
 
 * Go into the repository
@@ -71,7 +71,7 @@ $ nano .env
 
 * Clone the Keycloak SPI keycloak-event-listener
 ```sh
-$ git clone https://gitlab.proskive.de/uct/keycloak-event-listener.git
+$ git clone https://gitlab.ibdf-frankfurt.de.de/uct/keycloak-event-listener.git
 ```
 
 ### Mount the SPI
@@ -101,7 +101,7 @@ Click [here](#keycloak-configuration) for a detailed explanation.
 ### Run APProVe
 * When you first run APProVe it is advised to start every service after another to check if a service runs properly. If you want to quickly deploy APProVe you can skip these. Before you can Download the Images, you have to login onto the registry via: 
 ```sh
-$ docker login registry.gitlab.proskive.de
+$ docker login registry.gitlab.ibdf-frankfurt.de.de
 ```
 
 1. Config-Service stores all config files for the spring-boot services and acts as a centralized config hub. so it should be started before all other spring-boot services
@@ -191,8 +191,8 @@ Check the .env-Example file.
 
 
 ## Running a local installation
-If you want to run APProVe locally head over to our separate guides at [Minimal Demo Deployment](https://gitlab.proskive.de/uct/open-approve/-/tree/master/minimal-local-setup) or
-[Complete Demo Deployment](https://gitlab.proskive.de/uct/open-approve/-/tree/master/complete-local-setup).
+If you want to run APProVe locally head over to our separate guides at [Minimal Demo Deployment](https://gitlab.ibdf-frankfurt.de.de/uct/open-approve/-/tree/master/minimal-local-setup) or
+[Complete Demo Deployment](https://gitlab.ibdf-frankfurt.de.de/uct/open-approve/-/tree/master/complete-local-setup).
 
 Or you can check this guide:
 In order to run APProVE on the local machine, you have to route via the docker internal host. This is because you will access your application with a browser on your machine (which name is localhost, or 127.0.0.1), but inside Docker it will run in its own container, which name is  host.docker.internal. If you would run it on a server the reverse proxy would do the trick for it. Locally it is easier to use the docker host.
@@ -235,7 +235,7 @@ Let's start with the frontend.
 $ cd /etc/nginx/sites-available/
 
 # 2. Create the config for the frontend
-$ sudo nano proskive-frontend.conf
+$ sudo nano approve-frontend.conf
 
 # 2. Paste the following
 server {
@@ -257,7 +257,7 @@ server {
 $ cd /etc/nginx/sites-enabled/
 
 5. Create a symbolic link
-$ sudo ln -s ../sites-available/proskive-frontend.conf
+$ sudo ln -s ../sites-available/approve-frontend.conf
 
 6. Run Certbot to generate an encryption
 $ sudo certbot --nginx -d subdomain2.your-domain.com
@@ -312,7 +312,7 @@ In the following we wil use the standard ports. If you changed them in the .env-
 $ cd /etc/nginx/sites-available/
 
 # 2. Create the config for the frontend
-$ sudo nano proskive.conf
+$ sudo nano approve.conf
 
 # 2. Paste the following
 server {
@@ -360,7 +360,7 @@ server {
 $ cd /etc/nginx/sites-enabled/
 
 5. Create a symbolic link
-$ sudo ln -s ../sites-available/proskive.conf
+$ sudo ln -s ../sites-available/approve.conf
 
 6. Run Certbot to generate an encryption
 $ sudo certbot --nginx -d subdomain3.your-domain.com
@@ -386,7 +386,7 @@ Web Origins: "+"<br>
 It should look like this:
 <p align="center">
   <a href="#">
-    <img src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/keycloak-client.png"
+    <img src="https://gitlab.ibdf-frankfurt.de.de/uct/open-approve/-/raw/master/img/keycloak-client.png"
          alt="keycloak-client">
   </a>
 </p>
@@ -422,7 +422,7 @@ If you want to create a non admin role, just change the variables accordingly (i
 
 <p align="center">
   <a href="#">
-    <img src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/admin_roles.png"
+    <img src="https://gitlab.ibdf-frankfurt.de.de/uct/open-approve/-/raw/master/img/admin_roles.png"
          alt="WorkFlow">
   </a>
 </p>
@@ -433,7 +433,7 @@ The user must have the name "KEYCLOAK_USER_NAME" and password "KEYCLOAK_USER_PAS
 This user needs a specific Client-Role -> realm-admin.
 <p align="center">
   <a href="#">
-    <img src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/service-user.png"
+    <img src="https://gitlab.ibdf-frankfurt.de.de/uct/open-approve/-/raw/master/img/service-user.png"
          alt="service-user">
   </a>
 </p>
@@ -445,7 +445,7 @@ In the future, we will provide our own keycloak image prebuilt with this spi, so
 To use this functionality please check the following steps:
 ```bash
 1. move to your docker-compose.yml location 
-2. git clone https://gitlab.proskive.de/uct/keycloak-event-listener.git
+2. git clone https://gitlab.ibdf-frankfurt.de.de/uct/keycloak-event-listener.git
 3. nano docker-compose.yml
 4. add volumes to auth in docker-compose.yml
 volumes:
@@ -464,7 +464,7 @@ To test if it has worked, add a new Role/User in Keycloak and check in the admin
 ```
 <p align="center">
   <a href="#">
-    <img src="https://gitlab.proskive.de/uct/open-approve/-/raw/master/img/add-keycloak-spi.png"
+    <img src="https://gitlab.ibdf-frankfurt.de.de/uct/open-approve/-/raw/master/img/add-keycloak-spi.png"
          alt="service-user">
   </a>
 </p>
