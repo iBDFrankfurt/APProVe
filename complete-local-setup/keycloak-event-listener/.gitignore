@@ -1,4 +1,0 @@
-target/classes*
-target/maven*
-target/keycloak-event-listener-sources.jar
-target/generated-sources*
