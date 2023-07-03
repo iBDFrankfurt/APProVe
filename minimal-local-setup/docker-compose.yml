@@ -28,7 +28,7 @@ services:
       GRANT_TYPE: password
       KEYCLOAK_REALM: ${KEYCLOAK_REALM_NAME}
       KEYCLOAK_URL: ${APPROVE_KEYCLOAK_URL}
-      BACKEND_SERVICE_URL: http://approve.backend:8000
+      BACKEND_SERVICE_URL: ${APPROVE_BACKEND_URL}
     volumes:
     #-------------------------------------------------------------------------------------
     # ==== Create and add your own login Theme and paste it like this ====
