@@ -8,8 +8,8 @@ services:
     container_name: approve.auth
     image: ${KEYCLOAK_IMAGE}
     ports:
-      - 8080:8080
-    entrypoint: /opt/keycloak/bin/kc.sh start --hostname-url=http://localhost:8080
+      - ${AUTH_PORT}:8080
+    entrypoint: /opt/keycloak/bin/kc.sh start  --hostname-url=http://localhost:${AUTH_PORT} --health-enabled=true
     environment:
       KC_DB: postgres
       KC_DB_URL_DATABASE: ${APPROVE_AUTH_DB}
@@ -28,15 +28,15 @@ services:
       GRANT_TYPE: password
       KEYCLOAK_REALM: ${KEYCLOAK_REALM_NAME}
       KEYCLOAK_URL: ${APPROVE_KEYCLOAK_URL}
-      BACKEND_SERVICE_URL: http://approve.backend:8000
+      BACKEND_SERVICE_URL: ${APPROVE_BACKEND_URL}
     volumes:
-    #-------------------------------------------------------------------------------------
-    # ==== Create and add your own login Theme and paste it like this ====
-    #-------------------------------------------------------------------------------------
-      #- "path/to/your/theme:/opt/jboss/keycloak/themes/"
-    #-------------------------------------------------------------------------------------
-    # ==== Folder needs 777 rights for keycloak: see README====
-    #-------------------------------------------------------------------------------------
+      #-------------------------------------------------------------------------------------
+      # ==== Create and add your own login Theme and paste it like this ====
+      #-------------------------------------------------------------------------------------
+      - "./keycloak-themes/themes/uct:/opt/keycloak/themes/custom-theme"
+      #-------------------------------------------------------------------------------------
+      # ==== This SPI sends data from keycloak to the backend-service ====
+      #-------------------------------------------------------------------------------------
       - "./keycloak-event-listener/target/:/opt/keycloak/providers/"
     depends_on:
       - postgres
@@ -44,9 +44,9 @@ services:
       - approve_network
 
   postgres:
-    #-------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------
     # ==== Database for project based objects ====
-    #-------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------------------
     restart: always
     container_name: approve.postgres
     image: ${POSTGRES_IMAGE}
@@ -59,7 +59,7 @@ services:
       POSTGRES_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
       POSTGRES_DB: ${APPROVE_AUTH_DB}
     volumes:
-      - ".postgres_data:/var/lib/postgresql/data"
+      - "postgres_data:/var/lib/postgresql/data"
     networks:
       - approve_network
 
@@ -83,9 +83,9 @@ services:
     restart: always
     image: ${BACKEND_IMAGE}
     ports:
-     - ${BACKEND_PORT}:8000
+      - ${BACKEND_PORT}:8000
     environment:
-      # Keycloak variables 
+      # Keycloak variables
       APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
       APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
       # Eureka variables
@@ -120,7 +120,7 @@ services:
     restart: always
     image: ${FRONTEND_IMAGE}
     ports:
-     - ${FRONTEND_PORT}:8001
+      - ${FRONTEND_PORT}:8001
     environment:
       #Startup Variables
       APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
@@ -150,7 +150,7 @@ services:
       APPROVE_DRAFT_URL: ${APPROVE_DRAFT_URL}
       APPROVE_IMPORT_URL: ${APPROVE_IMPORT_URL}
     networks:
-     - approve_network
+      - approve_network
 
 
   eureka-service:
@@ -197,10 +197,9 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${APPROVE_MONGO_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${APPROVE_MONGO_PASSWORD}
     volumes:
-      - ".mongo_data:/data/db"
+      - "mongo_data:/data/db"
     networks:
       - approve_network
-
 
   user-service:
     #-------------------------------------------------------------------------------------
@@ -360,8 +359,10 @@ services:
     networks:
       - approve_network
 
-
 networks:
   approve_network:
-    external:
-      name: approve_network
+    external: true
+
+volumes:
+  postgres_data:
+  mongo_data:
