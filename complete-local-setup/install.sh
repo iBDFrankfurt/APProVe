@@ -1,6 +1,25 @@
 #!/bin/bash
 # Script to configure Keycloak and related services locally.
 # As of now it is untested on a server architecture and only for local deployments. I can be adjusted to run of a server though.
+# The script will do the following things:
+# 1. Check if docker, docker-compose and git are installed
+# 2. Checks if the .env file is present
+# 3. Login to the registry for APProVe Images
+# 4. Downloads the custom made themes for keycloak from https://gitlab.ibdf-frankfurt.de/proskive/keycloak-themes.git
+# 5. Downloads the custom made keycloak-event-listener to update the database of APProVe https://gitlab.ibdf-frankfurt.de/uct/keycloak-event-listener.git
+# 6. Creates the APProVe Docker Network and pulls the latest versions
+# 7. Starts all services
+# 8. After the services started it will begin to configure Keycloak based on the provides .env file
+# 8.1 Create new realm
+# 8.2 Creates user to communicate between APProVe and Keycloak
+# 8.3 Sets the previously downloaded keycloak-event-listener to this realm
+# 8.4 Creates a client in Keycloak
+# 8.5 Creates a default admin role
+# 8.6 Creates an admin user with that admin role
+# 8.7 Checks if the role and admin user were created in APProVe
+
+
+
 
 # Check if Docker, docker-compose, and git are installed
 if ! command -v docker &> /dev/null; then
@@ -19,7 +38,7 @@ if ! command -v git &> /dev/null; then
 fi
 
 echo "-----------------------------------------------------"
-echo "   Starting Keycloak configuration "
+echo "   Starting APProVe installation "
 echo "-----------------------------------------------------"
 
 # Check if .env file is present and read variables from it

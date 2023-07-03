@@ -46,9 +46,26 @@ Please keep in mind, that a few versions are unreleased or still being tested an
 ## Installing APProVe
 We created a script to help you guide through the installation. You can find it in this repository or under this link: https://gitlab.ibdf-frankfurt.de/uct/open-approve/-/blob/master/install.sh
 
-The script will do the following things:
-1. Up
+### The script will do the following things:
+1. Check if docker, docker-compose and git are installed
+2. Checks if the .env file is present
+3. Login to the registry for APProVe Images
+4. Downloads the custom made themes for keycloak from https://gitlab.ibdf-frankfurt.de/proskive/keycloak-themes.git
+5. Downloads the custom made keycloak-event-listener to update the database of APProVe https://gitlab.ibdf-frankfurt.de/uct/keycloak-event-listener.git
+6. Creates the APProVe Docker Network and pulls the latest versions
+7. Starts all services
+8. After the services started it will begin to configure Keycloak based on the provides .env file
+9. Create new realm 
+10. Creates user to communicate between APProVe and Keycloak 
+11. Sets the previously downloaded keycloak-event-listener to this realm 
+12. Creates a client in Keycloak 
+13. Creates a default admin role 
+14. Creates an admin user with that admin role 
+15. Checks if the role and admin user were created in APProVe
 
+### What the script is NOT doing:
+1. Adds entries to the hosts file if run locally
+2. Adds configurations for reverse proxy in a server environment
 
 ## Popular Documentation
 For further information take a look at our [iBDF Wiki](https://ibdf-frankfurt.de/wiki/Hauptseite).
