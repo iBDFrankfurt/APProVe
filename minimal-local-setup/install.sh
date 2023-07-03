@@ -81,8 +81,8 @@ docker exec approve.auth /opt/keycloak/bin/kcadm.sh config credentials --server 
 
 # Create a new realm in Keycloak
 echo "Creating realm..."
-docker exec approve.auth /opt/keycloak/bin/kcadm.sh create realms -s realm="$KEYCLOAK_REALM_NAME" -s enabled=true -o
-docker exec approve.auth /opt/keycloak/bin/kcadm.sh get realms/"$KEYCLOAK_REALM_NAME" --fields realm,enabled
+docker exec approve.auth /opt/keycloak/bin/kcadm.sh create realms -s realm="$KEYCLOAK_REALM_NAME" -s enabled=true -s 'accountTheme=custom-theme' -o
+docker exec approve.auth /opt/keycloak/bin/kcadm.sh get realms/"$KEYCLOAK_REALM_NAME" --fields realm,enabled,accountTheme
 
 # Add a restuser for APProVe
 echo "Adding restuser for APProVe..."
@@ -111,16 +111,14 @@ if [[ -z "$output" || "$output" == "null" ]]; then
     echo "The role id is null. Check logs of approve.backend!"
     docker logs approve.backend
 fi
+echo "Role found in APProVe Database:"
 echo "$output"
 
 # Finally, create the admin user to log in to APProVe
 echo "Creating admin user to log in to APProVe."
-docker exec approve.auth /opt/keycloak/bin/kcadm.sh create users -r "$KEYCLOAK_REALM_NAME" -s username="$APPROVE_ADMIN_USER" -s enabled=true -s 'email="'"$APPROVE_ADMIN_EMAIL"'"' -s "emailVerified=true" -s 'firstName="Your_First_Name"' -s 'lastName="Your_Last_Name"'
+docker exec approve.auth /opt/keycloak/bin/kcadm.sh create users -r "$KEYCLOAK_REALM_NAME" -s username="$APPROVE_ADMIN_USER" -s enabled=true -s 'email="'"$APPROVE_ADMIN_EMAIL"'"' -s "emailVerified=true" -s 'firstName="Your_First_Name"' -s 'lastName="Your_Last_Name"' -s 'requiredActions=["VERIFY_EMAIL","UPDATE_PROFILE","terms_and_conditions","update_password"]'
 
 docker exec approve.auth /opt/keycloak/bin/kcadm.sh set-password -r "$KEYCLOAK_REALM_NAME" --username "$APPROVE_ADMIN_USER" --new-password "$APPROVE_ADMIN_PASSWORD"
-
-echo "Adding required actions after first login."
-docker exec approve.auth /opt/keycloak/bin/kcadm.sh update users -r "$KEYCLOAK_REALM_NAME" --uusername "$APPROVE_ADMIN_USER" -s 'requiredActions=["VERIFY_EMAIL","UPDATE_PROFILE","CONFIGURE_TOTP","UPDATE_PASSWORD"]'
 
 docker exec approve.auth /opt/keycloak/bin/kcadm.sh add-roles -r "$KEYCLOAK_REALM_NAME" --uusername "$APPROVE_ADMIN_USER" --rolename 'APPROVE_ADMIN_ROLE'
 
@@ -130,6 +128,7 @@ if [[ -z "$output" || "$output" == "null" ]]; then
     echo "The person id is null. Check logs of approve.backend!"
     docker logs approve.backend
 fi
+echo "User found in APProVe Database:"
 echo "$output"
 
 echo "================================================================================================="
