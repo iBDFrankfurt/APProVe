@@ -64,8 +64,13 @@ We created a script to help you guide through the installation. You can find it 
 15. Checks if the role and admin user were created in APProVe
 
 ### What the script is NOT doing:
-1. Adds entries to the hosts file if run locally
-2. Adds configurations for reverse proxy in a server environment
+1. Does not add entries to the hosts file if run locally
+2. Does not add configurations for reverse proxy in a server environment
+3. Sets the URL's to reach every service
+
+## Local Deployment
+For a local deployment either check https://gitlab.ibdf-frankfurt.de/uct/open-approve/-/tree/master/complete-local-setup or https://gitlab.ibdf-frankfurt.de/uct/open-approve/-/tree/master/minimal-local-setup.
+
 
 ## Popular Documentation
 For further information take a look at our [iBDF Wiki](https://ibdf-frankfurt.de/wiki/Hauptseite).

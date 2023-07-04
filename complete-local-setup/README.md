@@ -52,7 +52,8 @@ And add these entries:
 127.0.0.1 approve.import
 127.0.0.1 approve.draft
 ```
-After that we can use the container_name in APProVe as localhost.
+
+After that we can use the container_name in APProVe as localhost. The container localhost is different from the hosts localhost because it is inside the container. But we can use the container_names for the localhost inside the container to reach other services.
 
 
 ## Limitations

@@ -19,8 +19,6 @@
 # 8.7 Checks if the role and admin user were created in APProVe
 
 
-
-
 # Check if Docker, docker-compose, and git are installed
 if ! command -v docker &> /dev/null; then
     echo "Docker is not installed. Please install Docker and try again."

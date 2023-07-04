@@ -49,27 +49,8 @@ And add these entries:
 127.0.0.1 approve.user
 127.0.0.1 approve.frontend
 ```
-After that we can use the container_name in APProVe as localhost.
 
-### Setup Keycloak
-Type in your Browser
-```
-http://localhost:8080
-```
-Which should open Keycloak. You can login with the credentials from the .env-file
-```
-APPROVE_KEYCLOAK_ADMIN_USER=adminuser
-APPROVE_KEYCLOAK_ADMIN_PASSWORD=adminpass
-```
-
-
-### Login
-After creating you Admin user the backend should already have the information send by Keycloak, so you can type in to your Browser
-```
-http://approve.frontend:8001
-```
-And click in ``Anmelden``. You should be redirected to Keycloak and be able to login with your APProVe admin user.
-After logging in you should be at the ``APProVe Dashboard`` with an orange layout indicating you are an admin.
+After that we can use the container_name in APProVe as localhost. The container localhost is different from the hosts localhost because it is inside the container. But we can use the container_names for the localhost inside the container to reach other services.
 
 
 ## Limitations
