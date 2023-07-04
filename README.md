@@ -45,6 +45,7 @@ Please keep in mind, that a few versions are unreleased or still being tested an
 
 ## Installing APProVe
 We created a script to help you guide through the installation. You can find it in this repository or under this link: https://gitlab.ibdf-frankfurt.de/uct/open-approve/-/blob/master/install.sh
+The script will deploy it locally, if you want to deploy it on a server you have to adjust the .env **before** running the install.sh script.
 
 ### The script will do the following things:
 1. Check if docker, docker-compose and git are installed
@@ -70,6 +71,158 @@ We created a script to help you guide through the installation. You can find it 
 
 ## Local Deployment
 For a local deployment either check https://gitlab.ibdf-frankfurt.de/uct/open-approve/-/tree/master/complete-local-setup or https://gitlab.ibdf-frankfurt.de/uct/open-approve/-/tree/master/minimal-local-setup.
+
+## Server Installation
+If you want to deploy APProVe in a Server environment you need to add a reverse proxy. For this guide we will demonstrate it with NGINX.
+
+### Reverse Proxy
+To be accessible from the outside world, a domain and at least 3 subdomains are required.
+This guide explains the steps using [NGINX](https://www.nginx.com/) and [Certbot](https://certbot.eff.org/) to encrypt APProVe with SSL and to set up a reverse proxy to
+make the docker containers accessible.
+
+<p>For this we look at 3 NGINX configuration files.
+For the frontend, for Keycloak and for the backend.</p>
+
+### Frontend NGINX Config
+Let's start with the frontend.
+```bash
+# 1. Navigate to the NGINX folder 
+$ cd /etc/nginx/sites-available/
+
+# 2. Create the config for the frontend
+$ sudo nano approve-frontend.conf
+
+# 2. Paste the following
+server {
+    server_name subdomain2.your-domain.com;
+    proxy_set_header   X-Real-IP $remote_addr;
+    proxy_set_header   X-Scheme $scheme;
+    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header   X-Forwarded-Proto $scheme;
+    proxy_set_header   X-Forwarded-Port $server_port;
+    proxy_set_header   Host $http_host;
+
+    location / {
+        proxy_pass http://localhost:<FRONTEND_PORT>;
+    }
+}
+# 3. Change the server_name and the port in the proxy_pass to the previously configured $FRONTEND_PORT from the .env
+
+# 4. Navigate to the sites-enabled folder from NGINX
+$ cd /etc/nginx/sites-enabled/
+
+5. Create a symbolic link
+$ sudo ln -s ../sites-available/approve-frontend.conf
+
+6. Run Certbot to generate an encryption
+$ sudo certbot --nginx -d subdomain2.your-domain.com
+
+7. Restart NGINX
+$ sudo systemctl restart nginx
+```
+That's it, the frontend should be available via https://subdomain2.your-domain.com
+
+### Keycloak NGINX Config
+It is basically the same procedure.
+```bash
+# 1. Navigate to the NGINX folder 
+$ cd /etc/nginx/sites-available/
+
+# 2. Create the config for the frontend
+$ sudo nano keycloak.conf
+
+# 2. Paste the following
+server {
+    server_name subdomain1.your-domain.com;
+    proxy_set_header   X-Real-IP $remote_addr;
+    proxy_set_header   X-Scheme $scheme;
+    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header   X-Forwarded-Proto $scheme;
+    proxy_set_header   X-Forwarded-Port $server_port;
+    proxy_set_header   Host $http_host;
+
+    location / {
+        proxy_pass http://localhost:<AUTH_PORT>;
+    }
+}
+# 3. Change the server_name and the port in the proxy_pass to the previously configured AUTH_PORT from the .env
+
+# 4. Navigate to the sites-enabled folder from NGINX
+$ cd /etc/nginx/sites-enabled/
+
+5. Create a symbolic link
+$ sudo ln -s ../sites-available/keycloak.conf
+
+6. Run Certbot to generate an encryption
+$ sudo certbot --nginx -d subdomain1.your-domain.com
+
+7. Restart NGINX
+$ sudo systemctl restart nginx
+```
+
+### Backend NGINX Config
+In the following we wil use the standard ports. If you changed them in the .env-File you have to change them here accordingly.
+```bash
+# 1. Navigate to the NGINX folder 
+$ cd /etc/nginx/sites-available/
+
+# 2. Create the config for the frontend
+$ sudo nano approve.conf
+
+# 2. Paste the following
+server {
+    server_name subdomain3.your-domain.com;
+    proxy_set_header   X-Real-IP $remote_addr;
+    proxy_set_header   X-Scheme $scheme;
+    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header   X-Forwarded-Proto $scheme;
+    proxy_set_header   X-Forwarded-Port $server_port;
+    proxy_set_header   Host $http_host;
+
+  location / {
+    proxy_pass http://localhost:8000;
+    }
+
+  location /user-service/ {
+     proxy_pass http://localhost:9001/;
+    }
+
+  location /automation-service/ {
+    proxy_pass http://localhost:3233/;
+  }
+
+  location /comment-service/ {
+    proxy_pass http://localhost:3234/;
+  }
+  location /mail-service/ {
+    proxy_pass http://localhost:4234/;
+  }
+  location /eureka-service/ {
+    proxy_pass http://localhost:8761/;
+  }
+  location /draft-service/ {
+    proxy_pass http://localhost:8002/;
+  }
+  location /manual/ {
+    proxy_pass http://localhost:443/manual/;
+  }
+
+}
+
+# 3. Change the server_name and the port in the proxy_pass to the previously configured ports from the .env
+
+# 4. Navigate to the sites-enabled folder from NGINX
+$ cd /etc/nginx/sites-enabled/
+
+5. Create a symbolic link
+$ sudo ln -s ../sites-available/approve.conf
+
+6. Run Certbot to generate an encryption
+$ sudo certbot --nginx -d subdomain3.your-domain.com
+
+7. Restart NGINX
+$ sudo systemctl restart nginx
+```
 
 
 ## Popular Documentation
