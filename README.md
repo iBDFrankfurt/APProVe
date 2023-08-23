@@ -46,6 +46,11 @@ Please keep in mind, that a few versions are unreleased or still being tested an
 ## Installing APProVe
 We created a script to help you guide through the installation. You can find it in this repository or under this link: https://gitlab.ibdf-frankfurt.de/uct/open-approve/-/blob/master/install.sh
 The script will deploy it locally, if you want to deploy it on a server you have to adjust the .env **before** running the install.sh script.
+!!IMPORTANT: Please run before running the install.sh script!!
+
+```bash
+docker login registry.gitlab.ibdf-frankfurt.de
+````
 
 ### The script will do the following things:
 1. Check if docker, docker-compose and git are installed
