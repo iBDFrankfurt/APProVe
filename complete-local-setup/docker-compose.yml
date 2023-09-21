@@ -9,7 +9,7 @@ services:
     image: ${KEYCLOAK_IMAGE}
     ports:
       - ${AUTH_PORT}:8080
-    entrypoint: /opt/keycloak/bin/kc.sh start  --hostname-url=http://localhost:${AUTH_PORT} --health-enabled=true
+    entrypoint: /opt/keycloak/bin/kc.sh start  --hostname-url=http://approve.auth:${AUTH_PORT} --health-enabled=true
     environment:
       KC_DB: postgres
       KC_DB_URL_DATABASE: ${APPROVE_AUTH_DB}
@@ -88,6 +88,7 @@ services:
       # Keycloak variables
       APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
       APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
+      APPROVE_CLIENT_ID: ${APPROVE_CLIENT_ID}
       # Eureka variables
       APPROVE_EUREKA: ${EUREKA_URL}
       EUREKA_PREFER_IP_ADDRESS: "true"
@@ -109,6 +110,8 @@ services:
       JAVA_OPTS: "-XX:+UseSerialGC -XX:MaxRAM=1024m"
     depends_on:
       - postgres
+      - eureka-service
+      - config-service
     networks:
       - approve_network
 
@@ -124,12 +127,13 @@ services:
     environment:
       #Startup Variables
       APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
+      APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
+      APPROVE_CLIENT_ID: ${APPROVE_CLIENT_ID}
       APPROVE_EUREKA: ${EUREKA_URL}
       EUREKA_URL: approve.eureka
       EUREKA_PORT: ${EUREKA_PORT}
       CONFIG_URL: approve.config
       CONFIG_PORT: ${CONFIG_PORT}
-      APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
       APPROVE_KEYCLOAK_URL: ${APPROVE_KEYCLOAK_URL}
       # Backend URLS
       APPROVE_SELF_URL: ${APPROVE_FRONTEND_URL}
@@ -139,14 +143,13 @@ services:
       APPROVE_AUTOMATION_URL: ${APPROVE_AUTOMATION_URL}
       APPROVE_MAIL_URL: ${APPROVE_MAIL_URL}
       MANUAL_URL: ${APPROVE_MANUAL_URL}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: approve.eureka:8761
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
       INSTANCE_HOSTNAME: PROJECT-WEB-SERVICE
       EUREKA_PREFER_IP_ADDRESS: "true"
       EUREKA_IP_ADDRESS: approve.frontend
       FRONTEND_USER_LAYOUT: /css/approve-main.css
       FRONTEND_ADMIN_LAYOUT: /css/approve-admin.css
       APPROVE_EMAIL_URL: ${APPROVE_FRONTEND_URL}
-      APPROVE_CLIENT_ID: ${APPROVE_CLIENT_ID}
       APPROVE_DRAFT_URL: ${APPROVE_DRAFT_URL}
       APPROVE_IMPORT_URL: ${APPROVE_IMPORT_URL}
     networks:
@@ -210,6 +213,8 @@ services:
     image: ${USER_IMAGE}
     environment:
       APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
+      APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
+      APPROVE_CLIENT_ID: ${APPROVE_CLIENT_ID}
       EUREKA_URL: approve.eureka
       EUREKA_PORT: ${EUREKA_PORT}
       CONFIG_URL: approve.config
@@ -220,9 +225,6 @@ services:
       EUREKA_IP_ADDRESS: approve.user
       APPROVE_KEYCLOAK_USER_NAME: ${KEYCLOAK_USER_NAME}
       APPROVE_KEYCLOAK_USER_PASSWORD: ${KEYCLOAK_USER_PASSWORD}
-      # General
-      APPROVE_KEYCLOAK_CLIENTID: ${APPROVE_CLIENT_ID}
-      APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
     ports:
       - ${USER_PORT}:9001
     networks:
@@ -313,6 +315,7 @@ services:
     environment:
       APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
       APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
+      APPROVE_CLIENT_ID: ${APPROVE_CLIENT_ID}
       APPROVE_EUREKA: ${EUREKA_URL}
       EUREKA_PREFER_IP_ADDRESS: "true"
       EUREKA_IP_ADDRESS: approve.import
@@ -341,6 +344,7 @@ services:
     environment:
       APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
       APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
+      APPROVE_CLIENT_ID: ${APPROVE_CLIENT_ID}
       APPROVE_EUREKA: ${EUREKA_URL}
       EUREKA_PREFER_IP_ADDRESS: "true"
       EUREKA_IP_ADDRESS: approve.draft

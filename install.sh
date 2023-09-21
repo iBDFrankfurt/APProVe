@@ -77,12 +77,11 @@ GIT_SSL_NO_VERIFY=1 git clone https://gitlab.ibdf-frankfurt.de/uct/keycloak-even
 # Create a Docker network and start the services using docker-compose
 echo "Create network"
 docker network create approve_network
-docker-compose pull && docker-compose up -d
+docker-compose pull && docker-compose up -d auth
 
 # Wait for services to be ready before continuing
 echo "Waiting for services to be ready..."
 # Define the API endpoints to check
-backend_endpoint="${APPROVE_BACKEND_URL}/api/health"
 keycloak_endpoint="${APPROVE_KEYCLOAK_URL}/health"
 
 is_endpoint_available() {
@@ -97,12 +96,12 @@ is_endpoint_available() {
     fi
 }
 
-while ! is_endpoint_available "$backend_endpoint" || ! is_endpoint_available "$keycloak_endpoint"; do
-    echo "Waiting for services..."
+while ! is_endpoint_available "$keycloak_endpoint"; do
+    echo "Waiting for keycloak..."
     sleep 10
 done
 
-echo "Services are up and running. Performing additional logic..."
+echo "Keycloak is running. Configure keycloak..."
 
 # Log in to Keycloak with the master user based on .env-file
 echo "Logging in to Keycloak with master user based on .env-file..."
@@ -127,18 +126,46 @@ docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh add-roles -r \"$KE
 echo "Done setting restuser. Setting keycloak-event-listener..."
 docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh update events/config -r \"$KEYCLOAK_REALM_NAME\" -s 'eventsListeners=[\"jboss-logging\",\"sample_event_listener\"]'"
 
-# Create client scope 'openid' and retrieve its ID
 CLIENT_SCOPE_NAME="openid"
-SID_STRING=$(docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh create client-scopes -r \"$KEYCLOAK_REALM_NAME\" -s name=\"$CLIENT_SCOPE_NAME\" -s protocol=openid-connect -s consentRequired=false")
-SID=$(echo "$SID_STRING" | grep -o "id '[^']*'" | grep -o "'[^']*'" | grep -o "[^']*")
-echo "Client Scope ID: $SID"
+
+# Create the client scope and extract the ID
+docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh create client-scopes -r \"$KEYCLOAK_REALM_NAME\" -s name=\"$CLIENT_SCOPE_NAME\" -s protocol=openid-connect -s consentRequired=false"
+
+clientScopes=$(docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh get client-scopes -r $KEYCLOAK_REALM_NAME  --fields 'id','name'")
+
+SID=$(echo "$clientScopes" | grep -B1 "\"name\" : \"$CLIENT_SCOPE_NAME\"" | grep -o '"id" : "[^"]*"' | awk -F'"' '{print $4}')
+
+if [ -n "$SID" ]; then
+  echo "ID for 'openid': $SID"
+else
+  echo "ID for 'openid' not found."
+fi
 
 # Create a client protected by Keycloak
 echo "Creating Client which will be protected by Keycloak."
-CID=$(docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh create clients -r \"$KEYCLOAK_REALM_NAME\" -s clientId=\"$APPROVE_CLIENT_ID\" -s 'rootUrl=\"$APPROVE_FRONTEND_URL\"' -s 'redirectUris=[\"$APPROVE_FRONTEND_URL/*\"]' -s 'webOrigins=[\"$APPROVE_FRONTEND_URL/*\"]' -s 'attributes.login_theme=custom-theme' -s 'directAccessGrantsEnabled=true' -s 'publicClient=true' -i")
+docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh create clients -r \"$KEYCLOAK_REALM_NAME\" -s clientId=\"$APPROVE_CLIENT_ID\" -s 'rootUrl=\"$APPROVE_FRONTEND_URL\"' -s 'redirectUris=[\"$APPROVE_FRONTEND_URL/*\"]' -s 'webOrigins=[\"$APPROVE_FRONTEND_URL/*\"]' -s 'attributes.login_theme=custom-theme' -s 'directAccessGrantsEnabled=true' -s 'publicClient=true' -i"
+approveClient=$(docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh get clients -r $KEYCLOAK_REALM_NAME  --fields 'id' --query clientId=\"$APPROVE_CLIENT_ID\"")
+# Convert the client ID to lowercase to perform a case-insensitive search
+CID=$(echo "$approveClient" | grep -o '"id" : "[^"]*"' | awk -F'"' '{print $4}')
+
+if [ -n "$CID" ]; then
+  echo "Client with clientId '$APPROVE_CLIENT_ID' found with id: $CID"
+else
+  echo "Client with clientId '$APPROVE_CLIENT_ID' not found."
+fi
+
 docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh update \"$APPROVE_KEYCLOAK_URL\"/admin/realms/\"$KEYCLOAK_REALM_NAME\"/clients/\"$CID\"/default-client-scopes/\"$SID\""
+
 echo "Done setting the client; $CID"
 
+echo "Starting every other service"
+
+docker-compose up -d backend-service
+backend_endpoint="${APPROVE_BACKEND_URL}/api/health"
+while ! is_endpoint_available "$backend_endpoint"; do
+    echo "Waiting for backend to start..."
+    sleep 10
+done
 
 # Create the default admin role in Keycloak and APProVe
 echo "Creating the default admin role in Keycloak and APProVe..."
@@ -170,9 +197,11 @@ fi
 echo "User found in APProVe Database:"
 echo "$output"
 
+docker-compose up -d
+
 echo "================================================================================================="
 echo "Congratulations! Installation was complete!"
-echo "Please check the logs if their are any errors via: docker-compose logs -f"
+echo "Please check the logs if there are any errors via: docker-compose logs -f"
 echo "You only need to run this install script once. After it successfully completed you can just use: docker-compose up -d in the future!"
 echo "You should now be able to log in $APPROVE_FRONTEND_URL"
 echo ">>> Depending on your system and installation, you may have to add NGINX entries or, if locally installed adjusting the hosts file. <<<"
