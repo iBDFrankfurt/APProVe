@@ -39,6 +39,7 @@ echo "-----------------------------------------------------"
 echo "   Starting APProVe installation "
 echo "-----------------------------------------------------"
 
+
 # Check if .env file is present and read variables from it
 echo "Checking if .env file is present..."
 if [ -e ".env" ]; then
@@ -66,6 +67,9 @@ else
   echo "File .env not found. Exiting."
   exit 1
 fi
+
+echo "$APPROVE_POSTGRES_USER"
+echo "$APPROVE_PROJECT_DB"
 
 # Clone the Keycloak Themes and keycloak event listener SPI repositories
 echo "Getting the Keycloak Themes..."
@@ -171,33 +175,16 @@ done
 echo "Creating the default admin role in Keycloak and APProVe..."
 docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh create roles -r \"$KEYCLOAK_REALM_NAME\" -s name='APPROVE_ADMIN_ROLE' -s 'attributes={\"is_admin\":[true]}' -s 'description=This is the default APProVe-Admin Role.'"
 
-# Check if the role is created in APProVe as well
-output="$(docker exec -t approve.postgres psql -U "$APPROVE_POSTGRES_USER" -d "$APPROVE_PROJECT_DB" -c "select id, name, is_admin from keycloak_roles;" | awk 'NR==3 {print $1, $2, $3}')"
-if [[ -z "$output" || "$output" == "null" ]]; then
-    echo "The role id is null. Check logs of approve.backend!"
-    docker logs approve.backend
-fi
-echo "Role found in APProVe Database:"
-echo "$output"
-
 # Finally, create the admin user to log in to APProVe
 echo "Creating admin user to log in to APProVe."
-docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh create users -r \"$KEYCLOAK_REALM_NAME\" -s username=\"$APPROVE_ADMIN_USER\" -s enabled=true -s 'email=\"$APPROVE_ADMIN_EMAIL\"' -s \"emailVerified=true\" -s 'firstName=\"Your_First_Name\"' -s 'lastName=\"Your_Last_Name\"' -s 'requiredActions=[\"VERIFY_EMAIL\",\"UPDATE_PROFILE\",\"terms_and_conditions\",\"update_password\"]'"
+docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh create users -r \"$KEYCLOAK_REALM_NAME\" -s username=\"$APPROVE_ADMIN_USER\" -s enabled=true -s 'email=\"$APPROVE_ADMIN_EMAIL\"' -s \"emailVerified=true\" -s 'firstName=\"$APPROVE_ADMIN_USER\"' -s 'lastName=\"Your_Last_Name\"' -s 'requiredActions=[\"VERIFY_EMAIL\",\"UPDATE_PROFILE\",\"terms_and_conditions\",\"update_password\"]'"
 
 docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh set-password -r \"$KEYCLOAK_REALM_NAME\" --username \"$APPROVE_ADMIN_USER\" --new-password \"$APPROVE_ADMIN_PASSWORD\""
 
 docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh add-roles -r \"$KEYCLOAK_REALM_NAME\" --uusername \"$APPROVE_ADMIN_USER\" --rolename 'APPROVE_ADMIN_ROLE'"
 
-# Check if the user is created in APProVe as well
-output="$(docker exec -t approve.postgres psql -U "$APPROVE_POSTGRES_USER" -d "$APPROVE_PROJECT_DB" -c "select id, last_name from person;" | awk 'NR==3 {print $1}')"
-if [[ -z "$output" || "$output" == "null" ]]; then
-    echo "The person id is null. Check logs of approve.backend!"
-    docker logs approve.backend
-fi
-echo "User found in APProVe Database:"
-echo "$output"
-
 docker-compose up -d
+
 
 echo "================================================================================================="
 echo "Congratulations! Installation was complete!"
