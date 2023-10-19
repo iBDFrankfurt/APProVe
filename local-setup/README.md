@@ -5,7 +5,7 @@
 This guide will walk you through the local deployment of APProVe. Some connections need to be changed to run the Docker deployment locally and imitate the reverse proxying needed to run APProVe.
 
 
-[[TOC]]
+[[_TOC_]]
 
 <p align="center">
   <a href="#">

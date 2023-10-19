@@ -4,7 +4,7 @@
 
 APProVe is a software developed by the Interdisciplinary Biomaterials and Database Frankfurt (iBDF) for the convenient management of biosamples and clinical data in research projects. It provides researchers and iBDF employees with a clear means of handling and tracking project requests to the biobank, mapping the entire process from application submission to sample distribution and project completion.
 
-[[TOC]]
+[[_TOC_]]
 
 <div align="center">
   <h4>A Project Proposal Management Software for Biobanks</h4>
