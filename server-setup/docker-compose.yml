@@ -243,7 +243,7 @@ services:
     ports:
       - ${COMMENT_PORT}:3234
     environment:
-      COMMENTS_PORT: ${COMMENT_PORT}
+      COMMENTS_PORT: 3234
       COMMENTS_HOST:
       MONGO_PORT: ${MONGO_PORT}
       MONGO_HOST: ${MONGO_URL}
@@ -268,7 +268,7 @@ services:
     ports:
       - ${EMAIL_PORT}:4234
     environment:
-      MAILS_PORT: ${EMAIL_PORT}
+      MAILS_PORT: 4234
       MAILS_HOST:
       MONGO_PORT: ${MONGO_PORT}
       MONGO_HOST: ${MONGO_URL}
@@ -293,7 +293,7 @@ services:
     ports:
       - ${AUTOMATION_PORT}:3233
     environment:
-      RULES_PORT: ${AUTOMATION_PORT}
+      RULES_PORT: 3233
       RULES_HOST:
       MONGO_PORT: ${MONGO_PORT}
       MONGO_HOST: ${MONGO_URL}
