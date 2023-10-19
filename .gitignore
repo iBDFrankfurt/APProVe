@@ -2,8 +2,8 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=intellij
 
 ### Postgres and Mongo
-complete-local-setup/.mongo_data/
-complete-local-setup/.postgres_data/
+local-setup/.mongo_data/
+local-setup/.postgres_data/
 minimal-local-setup/.postgres_data/
 
 
