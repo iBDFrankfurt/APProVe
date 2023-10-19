@@ -68,6 +68,38 @@ Username: adminuser
 Password: adminpass
 ````
 
-## Installing APProVe
+## APProVe Installation
+To set up APProVe on your server, follow these steps:
+
+1. Begin by downloading this repository or manually transferring the following files to your server:
+
+- .env.tmp
+- docker-compose.yml
+- generate_env.sh
+- generate_nginx_conf.sh
+- install.sh
+
+2. Execute the scripts in the following order to streamline the APProVe installation process:
+
+````shell
+bash generate_env.sh
+
+bash generate_nginx_conf.sh
+
+certbot --nginx
+
+install.sh
+````
+
+Should any issues or errors arise during this process, please don't hesitate to reach out to us for assistance.
 
 
+## Data Persistence and Backup
+Within the ``docker-compose.yml`` file, you'll find two named volumes that serve as a means of data persistence.
+
+In case you wish to create manual backups of the databases, please be aware that there are essentially three separate databases:
+1. Keycloak database (PostgreSQL)
+2. APProVe database (PostgreSQL)
+3. Additional data, such as comments or mail records, are stored in MongoDB (MongoDB).
+
+To simplify the backup process, we have developed a script named ``backup.sh.`` Be sure to adjust the script's variables to align with the settings in your ``.env`` file.
