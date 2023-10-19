@@ -3,13 +3,13 @@
 # As of now it is untested on a server architecture and only for local deployments. I can be adjusted to run of a server though.
 # The script will do the following things:
 # 1. Check if docker, docker-compose and git are installed
-# 2. Checks if the .env.tmp file is present
+# 2. Checks if the .env file is present
 # 3. Login to the registry for APProVe Images
 # 4. Downloads the custom made themes for keycloak from https://gitlab.ibdf-frankfurt.de/proskive/keycloak-themes.git
 # 5. Downloads the custom made keycloak-event-listener to update the database of APProVe https://gitlab.ibdf-frankfurt.de/uct/keycloak-event-listener.git
 # 6. Creates the APProVe Docker Network and pulls the latest versions
 # 7. Starts all services
-# 8. After the services started it will begin to configure Keycloak based on the provides .env.tmp file
+# 8. After the services started it will begin to configure Keycloak based on the provides .env file
 # 8.1 Create new realm
 # 8.2 Creates user to communicate between APProVe and Keycloak
 # 8.3 Sets the previously downloaded keycloak-event-listener to this realm
@@ -40,13 +40,13 @@ echo "   Starting APProVe installation "
 echo "-----------------------------------------------------"
 
 
-# Check if .env.tmp file is present and read variables from it
+# Check if .env file is present and read variables from it
 echo "Checking if .env file is present..."
 if [ -e ".env" ]; then
   echo "File .env found."
   echo "removing carriage return (CR) ..."
-  tr -d '\r' < .env.tmp > .env.tmp.temp
-  mv .env.tmp.temp .env.tmp
+  tr -d '\r' < .env > .env.temp
+  mv .env.temp .env
   source .env
   # Loop through the variables and print key-value pairs without comments
   echo "Variables defined in .env:"
@@ -62,7 +62,7 @@ if [ -e ".env" ]; then
 
     # Print key and value
     echo "$key = $value"
-  done < .env.tmp
+  done < .env
 else
   echo "File .env not found. Exiting."
   exit 1
@@ -81,7 +81,7 @@ GIT_SSL_NO_VERIFY=1 git clone https://gitlab.ibdf-frankfurt.de/uct/keycloak-even
 # Create a Docker network and start the services using docker-compose
 echo "Create network"
 docker network create approve_network
-docker-compose pull && docker-compose up -d auth
+docker-compose pull && docker-compose up -d auth eureka-service
 
 # Wait for services to be ready before continuing
 echo "Waiting for services to be ready..."
@@ -99,15 +99,16 @@ is_endpoint_available() {
         return 1  # Endpoint is not available
     fi
 }
-
+sleep 5
 while ! is_endpoint_available "$keycloak_endpoint"; do
     echo "Waiting for keycloak..."
+    docker logs "approve.auth${CONTAINER_NAME_SUFFIX}"
     sleep 10
 done
 
 echo "Keycloak is running. Configure keycloak..."
 
-# Log in to Keycloak with the master user based on .env.tmp-file
+# Log in to Keycloak with the master user based on .env-file
 echo "Logging in to Keycloak with master user based on .env-file..."
 docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh config credentials --server \"$APPROVE_KEYCLOAK_URL\" --realm master --user \"$APPROVE_KEYCLOAK_ADMIN_USER\" --password \"$APPROVE_KEYCLOAK_ADMIN_PASSWORD\""
 
@@ -162,12 +163,17 @@ docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh update \"$APPROVE_
 
 echo "Done setting the client; $CID"
 
-echo "Starting every other service"
+echo "Starting the backend."
+
+echo "Press Enter to continue..."
+read -r
 
 docker-compose up -d backend-service
 backend_endpoint="${APPROVE_BACKEND_URL}/api/health"
+sleep 5
 while ! is_endpoint_available "$backend_endpoint"; do
     echo "Waiting for backend to start..."
+    docker logs "approve.backend${CONTAINER_NAME_SUFFIX}"
     sleep 10
 done
 
@@ -182,6 +188,10 @@ docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh create users -r \"
 docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh set-password -r \"$KEYCLOAK_REALM_NAME\" --username \"$APPROVE_ADMIN_USER\" --new-password \"$APPROVE_ADMIN_PASSWORD\""
 
 docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh add-roles -r \"$KEYCLOAK_REALM_NAME\" --uusername \"$APPROVE_ADMIN_USER\" --rolename 'APPROVE_ADMIN_ROLE'"
+
+echo "Starting the rest of the services."
+echo "Press Enter to continue..."
+read -r
 
 docker-compose up -d
 

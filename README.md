@@ -111,7 +111,7 @@ server {
         proxy_pass http://localhost:<FRONTEND_PORT>;
     }
 }
-# 3. Change the server_name and the port in the proxy_pass to the previously configured $FRONTEND_PORT from the .env
+# 3. Change the server_name and the port in the proxy_pass to the previously configured $FRONTEND_PORT from the .env.tmp
 
 # 4. Navigate to the sites-enabled folder from NGINX
 $ cd /etc/nginx/sites-enabled/
@@ -150,7 +150,7 @@ server {
         proxy_pass http://localhost:<AUTH_PORT>;
     }
 }
-# 3. Change the server_name and the port in the proxy_pass to the previously configured AUTH_PORT from the .env
+# 3. Change the server_name and the port in the proxy_pass to the previously configured AUTH_PORT from the .env.tmp
 
 # 4. Navigate to the sites-enabled folder from NGINX
 $ cd /etc/nginx/sites-enabled/
@@ -214,7 +214,7 @@ server {
 
 }
 
-# 3. Change the server_name and the port in the proxy_pass to the previously configured ports from the .env
+# 3. Change the server_name and the port in the proxy_pass to the previously configured ports from the .env.tmp
 
 # 4. Navigate to the sites-enabled folder from NGINX
 $ cd /etc/nginx/sites-enabled/
