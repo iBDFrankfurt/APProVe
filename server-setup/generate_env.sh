@@ -43,7 +43,7 @@ for variable in "${variables_to_update[@]}"; do
 done
 
 # Perform variable substitution using envsubst to generate .env
-export $(grep -v '^#' "$output_env_file" | xargs)
+export "$(grep -v '^#' "$output_env_file" | xargs)"
 envsubst < "$output_env_file" > "temp.env"
 mv "temp.env" "$output_env_file"
 
