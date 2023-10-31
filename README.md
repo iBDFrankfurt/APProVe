@@ -46,6 +46,10 @@ Further improvements will be based on feedback.
 ## Popular Documentation
 For more information, visit our [iBDF Wiki](https://ibdf-frankfurt.de/wiki/Hauptseite).
 
+## Contribution
+[APProVe Architecture](https://backend.demo.ibdf-frankfurt.de/manual/introduction/architecture.html) consists of the following Microservices
+1. [Manual](https://github.com/iBDFrankfurt/APProVe-Manual): Documentation of APProVe
+
 ## Credits
 This software uses the following open-source packages:
 - [Node.js](https://nodejs.org/)
