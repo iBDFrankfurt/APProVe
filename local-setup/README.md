@@ -27,6 +27,23 @@ We've created a script to guide you through the installation. You can find it in
 ### Edit Your Hosts File
 To run the network with localhost, you need to edit your hosts file. Here are the necessary entries:
 
+On Windows and Ubuntu, you can find the hosts file in different locations:
+
+**For Windows**:
+Windows 11/10/8/7/Vista:
+- The hosts file is located at C:\Windows\System32\drivers\etc\hosts.
+- You'll need administrator privileges to edit this file. Make sure to open your text editor as an administrator to modify it.
+
+**For Ubuntu and Other Linux Distributions**:
+- The hosts file on Linux-based systems, including Ubuntu, is located in the /etc directory.
+- The full path to the hosts file is: /etc/hosts.
+- To edit the hosts file on Ubuntu, you will need superuser privileges. You can use a text editor with superuser rights, like sudo nano, to modify the file.
+
+Here's an example command to open and edit the hosts file on Ubuntu using the nano text editor:
+````shell
+sudo nano /etc/hosts
+````
+
 ```yml
 127.0.0.1 approve.backend
 127.0.0.1 approve.auth
@@ -42,6 +59,8 @@ To run the network with localhost, you need to edit your hosts file. Here are th
 Afterward, you can use the container_name in APProVe as localhost. The container localhost is different from the hosts' localhost because it is inside the container. 
 However, you can use the container_name for the localhost inside the container to access other services.
 
+For example:
+http://approve.frontend:8001 or http://approve.auth:8080
 
 ## Limitations
 Currently, it's not possible to change the Keycloak URL to a different port, so port 8080 should be free before a local deployment. 
