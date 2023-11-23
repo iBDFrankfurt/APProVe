@@ -281,6 +281,7 @@ services:
       EUREKA_SERVICE_NAME: "MAIL-SERVICE"
       CHECK_TOKEN_URL: ${APPROVE_KEYCLOAK_URL}/realms/${KEYCLOAK_REALM_NAME}/protocol/openid-connect/userinfo
       IS_LOCAL: "false"
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
     networks:
       - approve_network
 

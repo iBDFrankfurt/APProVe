@@ -7,6 +7,23 @@ output_env_file=".env"
 # Copy the .env.tmp file to .env
 cp "$input_env_file" "$output_env_file"
 
+# Function to generate a random hexadecimal key
+generate_random_key() {
+  openssl rand -hex 32
+}
+
+# Check if ENCRYPTION_KEY is already set, if not, generate a new key
+if ! grep -q "^CONTAINER_NAME_SUFFIX=" "$output_env_file"; then
+  new_key=$(generate_random_key)
+  echo -e "# Used for encryption\n# You can generate it by: openssl rand -hex 32" >> "$output_env_file"
+  echo "ENCRYPTION_KEY=$new_key" >> "$output_env_file"
+fi
+
+if ! grep -q "^CONTAINER_NAME_SUFFIX=" "$output_env_file"; then
+  echo -e "#---------------------------------------------------------------------------------------------------------\n# Only important if approve runs multiple times on the same server. Adjusts the container names\n # Can be left blank" >> "$output_env_file"
+  echo "CONTAINER_NAME_SUFFIX=" >> "$output_env_file"
+fi
+
 # List of environment variables to update
 variables_to_update=(
   "APPROVE_POSTGRES_USER"
@@ -23,7 +40,6 @@ variables_to_update=(
   "APPROVE_ADMIN_USER"
   "APPROVE_ADMIN_PASSWORD"
   "APPROVE_ADMIN_EMAIL"
-  "CONTAINER_NAME_SUFFIX"
 )
 
 # Loop through the list and update the variables
