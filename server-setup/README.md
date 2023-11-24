@@ -40,6 +40,7 @@ We offer three scripts, although only one of them is mandatory:
 This script takes the content from the ``.env.tmp`` file and transfers it into a new ``.env`` file. 
 Subsequently, you can enter essential information about your APProVe instance, such as the Realm name and the domain on which APProVe will operate. 
 The final step involves populating the newly generated ``.env`` file with your input.
+**Additionally, this script sets the ``ENCRYPTION_KEY`` for the mail-service.** This is important, if you do not run the script you have to set it manually by using ``openssl rand -hex 32``.
 
 ### generate_nginx_conf (optional)
 This script is designed to create NGINX configuration files based on the details in the ``.env`` file. 
