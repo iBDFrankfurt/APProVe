@@ -43,6 +43,73 @@ You can choose to install APProVe for testing purposes on a computer. For local 
 
 Further improvements will be based on feedback.
 
+## Upgrade Guide
+
+### 3.4 to 3.5
+If you have previously run APProVe in Version 3.4 and want to upgrade to 3.5 you have to check for these breaking changes.
+
+#### Mongo upgrade
+Our GoLang Services (email, comment, automation) previously used the MongoDriver Version for MongoDB 4. As this approaches the end of support we chose to directly upgrade our services to be used by the new MongoDB 6 version.
+If you want to upgrade APProVe from 3.4 to 3.5 you have to first download the new images for email-service (1.4.0), comment-service(1.1.0) and automation-service(1.5.0) and leave the MONGO_IMAGE at 4.4.
+
+Afterward, increase the version from MONGO_IMAGE=mongo:4.4 to MONGO_IMAGE=mongo:5.0 in the ``.env``-file and run ``docker-compose pull`` again and run ``docker-compose up -d mongo``.
+
+Now update the internal Mongo version with this command:
+
+````shell
+docker exec -ti approve.mongo bash -c "mongo -u mongo_admin -p mongopass --eval \"db.adminCommand( {setFeatureCompatibilityVersion: '5.0' } )\""
+````
+
+Now you can change the image version again to MONGO_IMAGE=mongo:6
+
+Again update the internal Mongo version with this command (be careful mongo now uses mongosh)
+
+````shell
+docker exec -ti approve.mongo bash -c "mongo -u mongo_admin -p mongopass --eval \"db.adminCommand( {setFeatureCompatibilityVersion: '5.0' } )\""
+````
+
+docker exec -ti approve.mongo-demo bash -c "mongosh --port 27014 -u mongo_admin -p mongopass --eval \"db.adminCommand( {setFeatureCompatibilityVersion: '6.0' } )\""
+
+Now you can start the new GoLang services with docker-compose up -d
+
+#### Breaking change in email-service
+email-Service version 1.4.0 introduces password encryption of the mail-server which was previously saved in the database.
+Now every time you restart the email-service it generates an encryption_key to encrypt the password in the database. This means your password can't be decrypted after a restart of the service.
+To persist the changes we introduced a new ``.env``-variable called ``ENCRYPTION_KEY``. When the new email-service starts it will generate one. just check the logs via ``docker logs mail-service`` or create the key via ``openssl rand -hex 32``.
+Now place it in your ``.env``-file like this:
+````yaml
+ENCRYPTION_KEY=1911668690d83b2ded9176039111e15b568217d3e7be215f2a0a1ea5b82f8a27
+````
+
+Add this line to the ``docker-compose.yml``
+
+``ENCRYPTION_KEY: ${ENCRYPTION_KEY}``
+under mail-service -> environment.
+
+it should look like this:
+
+````yaml
+  mail-service:
+    #-------------------------------------------------------------------------------------
+    # ==== Mainly CRUD service in golang for emails and templates ====
+    #-------------------------------------------------------------------------------------
+    restart: always
+    image: ${EMAIL_IMAGE}
+    container_name: approve.mails
+    ports:
+      - ${EMAIL_PORT}:4234
+    environment:
+     ...
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+    networks:
+      - approve_network
+
+````
+
+After these changes you have to reconfigure your mail-service if you already had one in the settings of APProVe.
+
+
+
 ## Popular Documentation
 For more information, visit our [iBDF Wiki](https://ibdf-frankfurt.de/wiki/Hauptseite).
 
