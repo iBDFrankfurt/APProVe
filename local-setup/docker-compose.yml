@@ -169,7 +169,7 @@ services:
       EUREKA_PORT: ${EUREKA_PORT}
       CONFIG_PORT: ${CONFIG_PORT}
       CONFIG_URL: config-service
-      JAVA_OPTS: "-XX:+UseSerialGC -XX:MaxRAM=512m"
+      JAVA_OPTS: "-XX:+UseSerialGC -XX:MaxRAM=512m -Xmx1G -Xms80m -XX:SharedArchiveFile=app-cds.jsa -XX:TieredStopAtLevel=1"
     depends_on:
       - config-service
     networks:
