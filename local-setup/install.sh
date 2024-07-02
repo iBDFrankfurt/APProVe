@@ -93,12 +93,13 @@ is_endpoint_available() {
     response_code=$(curl -s -o /dev/null -w "%{http_code}" "$1")
     echo "curl backend at ${backend_endpoint} returned ${response_code}"
     echo "curl auth at ${keycloak_endpoint} returned ${response_code}"
-    if [ "$response_code" = "200" ]; then
+    if [[ "$response_code" = "200" || "$response_code" = "401" ]]; then
         return 0  # Endpoint is available
     else
         return 1  # Endpoint is not available
     fi
 }
+
 sleep 5
 while ! is_endpoint_available "$keycloak_endpoint"; do
     echo "Waiting for keycloak..."
