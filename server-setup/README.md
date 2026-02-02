@@ -297,8 +297,8 @@ sudo certbot renew --dry-run
 ### Step 6: Run Installation Script
 
 ```bash
-chmod +x install.sh
-bash install.sh
+chmod +x install_server.sh
+bash install_server.sh
 ```
 
 **The installation script will:**
@@ -462,7 +462,7 @@ docker-compose down
 docker volume rm approve-server_postgres_data
 
 # Reinstall
-bash install.sh
+bash install_server.sh
 ```
 
 ### Performance Issues

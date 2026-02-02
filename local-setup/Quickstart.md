@@ -44,8 +44,8 @@ Enter your GitLab username and Personal Access Token (needs `read_registry` scop
 
 ```bash
 cd local-setup
-chmod +x install.sh
-./install.sh
+chmod +x install_server.sh
+./install_server.sh
 ```
 
 The script will:

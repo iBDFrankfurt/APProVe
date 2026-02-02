@@ -66,13 +66,17 @@ echo ""
 #----------------------------------------------------------------------------------
 echo -e "${BLUE}Loading environment variables...${NC}"
 
-# Source the .env file
-set -o allexport
-source "$ENV_FILE"
-set +o allexport
+while IFS='=' read -r key value || [[ -n "$key" ]]; do
+    [[ "$key" =~ ^#.*$ ]] && continue
+    [[ -z "$key" ]] && continue
 
-echo -e "${GREEN}✓ Environment loaded${NC}"
-echo ""
+    clean_value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+
+    # Export the variable so it's available for the HEREDOC below
+    export "$key"="$clean_value"
+done < "$ENV_FILE"
+
+echo -e "${GREEN}✓ Environment loaded${NC}\n"
 
 #----------------------------------------------------------------------------------
 # Extract Domain Names
@@ -305,17 +309,6 @@ server {
         proxy_set_header X-Forwarded-Port \$server_port;
     }
 
-    # Draft Service
-    location /draft-service/ {
-        proxy_pass http://127.0.0.1:${DRAFT_PORT}/;
-
-        proxy_set_header Host \$http_host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_set_header X-Forwarded-Port \$server_port;
-    }
-
     # Import Service
     location /import-service/ {
         proxy_pass http://127.0.0.1:${IMPORT_PORT}/;
@@ -391,10 +384,10 @@ echo "  • Backend:   ${BACKEND_DOMAIN}"
 echo ""
 echo -e "${BLUE}Next Steps:${NC}"
 echo "  1. Configure SSL with certbot:"
-echo "     ${YELLOW}sudo certbot --nginx${NC}"
+echo -e "     ${YELLOW}sudo certbot --nginx${NC}"
 echo ""
 echo "  2. Run the installation script:"
-echo "     ${YELLOW}bash install.sh${NC}"
+echo -e "     ${YELLOW}bash install.sh${NC}"
 echo ""
 echo -e "${YELLOW}⚠  Note:${NC} Make sure DNS records for all domains point to this server!"
 echo ""

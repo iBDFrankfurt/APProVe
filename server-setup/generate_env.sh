@@ -106,7 +106,7 @@ prompt_for_variable() {
 
     # Get current value
     local current_value
-    current_value=$(grep "^${var_name}=" "$OUTPUT_ENV_FILE" | cut -d '=' -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+     current_value=$(grep "^${var_name}=" "$OUTPUT_ENV_FILE" | head -1 | cut -d '=' -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
 
     # Display prompt
     if [ "$is_password" = "true" ]; then
@@ -123,9 +123,9 @@ prompt_for_variable() {
 
     # Update .env file
     if grep -q "^${var_name}=" "$OUTPUT_ENV_FILE"; then
-        sed -i "s|^${var_name}=.*|${var_name}=${new_value}|" "$OUTPUT_ENV_FILE"
+        sed -i "s|^${var_name}=.*|${var_name}=\"${new_value}\"|" "$OUTPUT_ENV_FILE"
     else
-        echo "${var_name}=${new_value}" >> "$OUTPUT_ENV_FILE"
+        echo "${var_name}=\"${new_value}\"" >> "$OUTPUT_ENV_FILE"
     fi
 }
 
@@ -193,23 +193,46 @@ echo ""
 #----------------------------------------------------------------------------------
 # Perform Variable Substitution
 #----------------------------------------------------------------------------------
-echo -e "${BLUE}Performing variable substitution...${NC}"
+echo -e "\n${BLUE}Performing variable substitution...${NC}"
 
-# Export all variables from .env
-set -o allexport
-source "$OUTPUT_ENV_FILE"
-set +o allexport
+# Instead of sourcing (which fails on spaces/dashes), we manually export each variable
+while IFS='=' read -r key value || [[ -n "$key" ]]; do
+    # Skip comments and empty lines
+    [[ "$key" =~ ^#.*$ ]] && continue
+    [[ -z "$key" ]] && continue
 
-# Substitute variables in .env
+    # Clean the value: strip whitespace and surrounding quotes
+    clean_value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^"//;s/"$//')
+
+    # Export the variable so envsubst can see it
+    export "$key"="$clean_value"
+done < "$OUTPUT_ENV_FILE"
+
+BASE_URL=$(echo "$APPROVE_BACKEND_URL" | sed 's|/$||')
+
+# Update the .env file with the correctly formatted URLs
+sed -i "s|^APPROVE_USER_URL=.*|APPROVE_USER_URL=\"${BASE_URL}/user-service\"|" "$OUTPUT_ENV_FILE"
+sed -i "s|^APPROVE_AUTOMATION_URL=.*|APPROVE_AUTOMATION_URL=\"${BASE_URL}/automation-service\"|" "$OUTPUT_ENV_FILE"
+sed -i "s|^APPROVE_COMMENTS_URL=.*|APPROVE_COMMENTS_URL=\"${BASE_URL}/comment-service\"|" "$OUTPUT_ENV_FILE"
+sed -i "s|^APPROVE_MAIL_URL=.*|APPROVE_MAIL_URL=\"${BASE_URL}/mail-service\"|" "$OUTPUT_ENV_FILE"
+sed -i "s|^APPROVE_MANUAL_URL=.*|APPROVE_MANUAL_URL=\"${BASE_URL}/manual\"|" "$OUTPUT_ENV_FILE"
+sed -i "s|^APPROVE_DRAFT_URL=.*|APPROVE_DRAFT_URL=\"${BASE_URL}/draft-service\"|" "$OUTPUT_ENV_FILE"
+sed -i "s|^APPROVE_IMPORT_URL=.*|APPROVE_IMPORT_URL=\"${BASE_URL}/import-service\"|" "$OUTPUT_ENV_FILE"
+
 envsubst < "$OUTPUT_ENV_FILE" > .env.temp
 mv .env.temp "$OUTPUT_ENV_FILE"
 
-echo -e "${GREEN}✓ Variable substitution complete${NC}"
+echo -e "${GREEN}✓ Configuration complete!${NC}"
+echo -e "${BLUE}Final .env file is ready.${NC}\n"
 echo ""
 
 #----------------------------------------------------------------------------------
 # Summary
 #----------------------------------------------------------------------------------
+# Helper to show values without quotes in the summary
+get_val() {
+    grep "^$1=" .env | cut -d'=' -f2- | sed 's/^"//;s/"$//'
+}
 echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}           Configuration Complete!                         ${NC}"
 echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
@@ -217,18 +240,18 @@ echo ""
 echo "Configuration file created: ${OUTPUT_ENV_FILE}"
 echo ""
 echo -e "${YELLOW}Key Configuration:${NC}"
-echo "  • Keycloak URL:  $(grep '^APPROVE_KEYCLOAK_URL=' .env | cut -d'=' -f2)"
-echo "  • Frontend URL:  $(grep '^APPROVE_FRONTEND_URL=' .env | cut -d'=' -f2)"
-echo "  • Backend URL:   $(grep '^APPROVE_BACKEND_URL=' .env | cut -d'=' -f2)"
-echo "  • Realm Name:    $(grep '^KEYCLOAK_REALM_NAME=' .env | cut -d'=' -f2)"
+echo -e "  • Keycloak URL:  $(get_val APPROVE_KEYCLOAK_URL)"
+echo -e "  • Frontend URL:  $(get_val APPROVE_FRONTEND_URL)"
+echo -e "  • Backend URL:   $(get_val APPROVE_BACKEND_URL)"
+echo -e "  • Realm Name:    $(get_val KEYCLOAK_REALM_NAME)"
 echo ""
 echo -e "${BLUE}Next Steps:${NC}"
-echo "  1. Review the .env file and verify all settings"
-echo "  2. Run: ${YELLOW}bash generate_nginx_conf.sh${NC}"
-echo "  3. Configure SSL with: ${YELLOW}sudo certbot --nginx${NC}"
-echo "  4. Run: ${YELLOW}bash install.sh${NC}"
+echo -e "  1. Review the .env file and verify all settings"
+echo -e "  2. Run: ${YELLOW}make nginx${NC}"
+echo -e "  3. Configure SSL with: ${YELLOW}make certbot${NC}"
+echo -e "  4. Run: ${YELLOW}make install${NC}"
 echo ""
 echo -e "${RED}⚠  IMPORTANT SECURITY NOTE:${NC}"
-echo "   Make sure to change all default passwords before going to production!"
-echo "   Protect your .env file - it contains sensitive credentials."
+echo -e "   Make sure to change all default passwords before going to production!"
+echo -e "   Protect your .env file - it contains sensitive credentials."
 echo ""

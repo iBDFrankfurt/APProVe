@@ -31,8 +31,8 @@ env: ## Generate or edit .env configuration
 
 nginx: ## Generate and enable Nginx configuration
 	@printf "$(GREEN)Generating Nginx configuration...$(NC)\n"
-	@chmod +x generate_nginx.sh
-	@sudo ./generate_nginx.sh
+	@chmod +x generate_nginx_conf.sh
+	@sudo ./generate_nginx_conf.sh
 
 certbot: ## Obtain SSL certificates (requires Nginx to be running)
 	@printf "$(GREEN)Running Certbot for SSL...$(NC)\n"
@@ -47,19 +47,19 @@ install: ## Run the main server installation script
 
 start: ## Start all services
 	@printf "$(GREEN)Starting all services...$(NC)\n"
-	@docker-compose up -d
+	@docker compose up -d
 
 stop: ## Stop all services
 	@printf "$(YELLOW)Stopping all services...$(NC)\n"
-	@docker-compose down
+	@docker compose down
 
 restart: ## Restart all services
 	@printf "$(YELLOW)Restarting all services...$(NC)\n"
-	@docker-compose restart
+	@docker compose restart
 
 pull: ## Pull latest images
 	@printf "$(GREEN)Pulling latest images...$(NC)\n"
-	@docker-compose pull
+	@docker compose pull
 
 update: pull restart ## Pull latest images and restart services
 
@@ -67,7 +67,7 @@ update: pull restart ## Pull latest images and restart services
 
 status: ## Show Docker container status
 	@printf "$(BLUE)Service Status:$(NC)\n"
-	@docker-compose ps
+	@docker compose ps
 
 health: ## Run the diagnostic script
 	@printf "$(BLUE)Running diagnostic checks...$(NC)\n"
@@ -75,10 +75,10 @@ health: ## Run the diagnostic script
 	@./diagnostic_server.sh
 
 logs: ## Show logs for all services (follow mode)
-	@docker-compose logs -f
+	@docker compose logs -f
 
 logs-%: ## Show logs for specific service (e.g., make logs-backend)
-	@docker-compose logs -f $*
+	@docker compose logs -f $*
 
 ##@ Database & Backups
 
@@ -104,7 +104,20 @@ db-mongo: ## Connect to MongoDB database
 
 clean: ## Stop services and remove containers
 	@printf "$(YELLOW)Stopping and removing containers...$(NC)\n"
-	@docker-compose down
+	@docker compose down
+
+clean-all: ## Remove containers, networks, and volumes
+	@printf "$(RED)⚠ This will delete all data!$(NC)"
+	@read -p "Are you sure? [y/N] " -n 1 -r; \
+	printf; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		printf "$(YELLOW)Removing containers, networks, and volumes...$(NC)"; \
+		docker compose down -v; \
+		docker network rm approve_network 2>/dev/null || true; \
+		printf "$(GREEN)✓ Complete cleanup finished$(NC)"; \
+	else \
+		printf "$(YELLOW)Cleanup cancelled$(NC)"; \
+	fi
 
 prune: ## Prune unused Docker resources
 	@printf "$(YELLOW)Pruning unused Docker resources...$(NC)\n"

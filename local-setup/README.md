@@ -95,8 +95,8 @@ cd local-setup
 docker login registry.gitlab.ibdf-frankfurt.de
 
 # 3. Run installation script
-chmod +x install.sh
-./install.sh
+chmod +x install_server.sh
+./install_server.sh
 
 # 4. Access APProVe
 # Open: http://approve.frontend:8001
@@ -184,7 +184,7 @@ cd /path/to/approve/local-setup
 ```bash
 ls -la
 # You should see:
-# - install.sh
+# - install_server.sh
 # - docker-compose.yml
 # - .env
 # - README.md
@@ -196,12 +196,12 @@ ls -la
 
 **Make the script executable:**
 ```bash
-chmod +x install.sh
+chmod +x install_server.sh
 ```
 
 **Execute the installation:**
 ```bash
-./install.sh
+./install_server.sh
 ```
 
 **What the script does:**
@@ -385,7 +385,7 @@ docker-compose logs -f backend-service
 # Reset everything (nuclear option)
 docker-compose down -v
 docker network prune
-./install.sh
+./install_server.sh
 ```
 
 ---
@@ -446,10 +446,10 @@ docker network prune
 **Solution:**
 ```bash
 # Automatic fix (script handles this)
-dos2unix install.sh
+dos2unix install_server.sh
 
 # Manual fix
-sed -i 's/\r$//' install.sh
+sed -i 's/\r$//' install_server.sh
 ```
 
 ---
@@ -561,7 +561,7 @@ docker network rm approve_network
 docker system prune -a --volumes
 
 # Reinstall
-./install.sh
+./install_server.sh
 ```
 
 ---

@@ -64,7 +64,7 @@ mkdir -p ~/approve-server && cd ~/approve-server
 chmod +x *.sh
 
 # Login to GitLab Registry
-make login
+docker login gitlab.ibdf-frankfurt.de
 ```
 
 ---

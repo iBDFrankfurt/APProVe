@@ -144,7 +144,7 @@ check_prerequisites() {
     log "✅ Docker daemon is running."
 
     # Check Docker Compose version
-    local compose_version=$(docker-compose --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    local compose_version=$(docker compose --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
     log_info "Docker Compose version: ${compose_version}"
 
     # Check available memory
@@ -273,27 +273,27 @@ setup_network() {
 start_core_services() {
     log "🚀 Starting core infrastructure services..."
 
-    docker-compose pull --quiet
+    docker compose pull --quiet
 
     log_info "Starting PostgreSQL..."
-    docker-compose up -d postgres
+    docker compose up -d postgres
     wait_for_container "approve.postgres${CONTAINER_NAME_SUFFIX}" "PostgreSQL" 30 || exit 1
 
     log_info "Starting MongoDB..."
-    docker-compose up -d mongo
+    docker compose up -d mongo
     wait_for_container "approve.mongo${CONTAINER_NAME_SUFFIX}" "MongoDB" 30 || exit 1
 
     log_info "Starting Configuration Service..."
-    docker-compose up -d config-service
+    docker compose up -d config-service
     wait_for_container "approve.config${CONTAINER_NAME_SUFFIX}" "config-service" 60 || exit 1
 
     log_info "Starting Eureka Service Registry..."
-    docker-compose up -d eureka-service
+    docker compose up -d eureka-service
     wait_for_container "approve.eureka${CONTAINER_NAME_SUFFIX}" "eureka" 60 || exit 1
 
     log_info "Starting Keycloak..."
-    docker-compose up -d auth
-    wait_for_service "${APPROVE_KEYCLOAK_URL}/health/live" "keycloak" 120 || exit 1
+    docker compose up -d auth
+    wait_for_service "http://localhost:${AUTH_PORT}/health/live" "keycloak" 120 || exit 1
 }
 
 #----------------------------------------------------------------------------------
@@ -307,7 +307,7 @@ configure_keycloak_infrastructure() {
         KC=/opt/keycloak/bin/kcadm.sh
 
         # Login
-        \$KC config credentials --server '$APPROVE_KEYCLOAK_URL' --realm master --user '$APPROVE_KEYCLOAK_ADMIN_USER' --password '$APPROVE_KEYCLOAK_ADMIN_PASSWORD'
+        \$KC config credentials --server 'http://localhost:8080' --realm master --user '$APPROVE_KEYCLOAK_ADMIN_USER' --password '$APPROVE_KEYCLOAK_ADMIN_PASSWORD'
 
         # 1. Create Realm
         echo '[KC] Create realm'
@@ -352,7 +352,7 @@ create_approve_admin() {
         KC=/opt/keycloak/bin/kcadm.sh
 
         # Login
-        \$KC config credentials --server '$APPROVE_KEYCLOAK_URL' --realm master --user '$APPROVE_KEYCLOAK_ADMIN_USER' --password '$APPROVE_KEYCLOAK_ADMIN_PASSWORD'
+          \$KC config credentials --server 'http://localhost:8080' --realm master --user '$APPROVE_KEYCLOAK_ADMIN_USER' --password '$APPROVE_KEYCLOAK_ADMIN_PASSWORD'
 
         # 1. CREATE ROLE
         echo '[KC] Create Admin Role'
@@ -379,7 +379,7 @@ start_application() {
 
     # 1. Start Backend specifically
     log_info "Starting Backend Service..."
-    docker-compose up -d backend-service
+    docker compose up -d backend-service
 
     # 2. WAIT for Backend
     wait_for_service "http://localhost:${BACKEND_PORT}/api/actuator/health" "backend-service" 180 || exit 1
@@ -389,7 +389,7 @@ start_application() {
 
     # 4. Start the rest of the stack
     log_info "Starting remaining microservices..."
-    docker-compose up -d
+    docker compose up -d
 
     log "✅ All services started."
 }
@@ -426,7 +426,7 @@ verify_installation() {
 
     if [ ${#failed_services[@]} -gt 0 ]; then
         log_warning "Some services failed to start: ${failed_services[*]}"
-        log_info "Check logs with: docker-compose logs <service-name>"
+        log_info "Check logs with: docker compose logs <service-name>"
     fi
 }
 
@@ -435,7 +435,7 @@ verify_installation() {
 #----------------------------------------------------------------------------------
 cleanup_on_error() {
     log_error "Installation failed. Cleaning up..."
-    docker-compose down
+    docker compose down
     exit 1
 }
 
@@ -477,10 +477,10 @@ main() {
     log_info "  • Password:  ${APPROVE_ADMIN_PASSWORD}"
     echo ""
     log_info "Useful Commands:"
-    log_info "  • View logs:     docker-compose logs -f [service-name]"
-    log_info "  • Stop all:      docker-compose down"
-    log_info "  • Restart:       docker-compose restart [service-name]"
-    log_info "  • View status:   docker-compose ps"
+    log_info "  • View logs:     docker compose logs -f [service-name]"
+    log_info "  • Stop all:      docker compose down"
+    log_info "  • Restart:       docker compose restart [service-name]"
+    log_info "  • View status:   docker compose ps"
     echo ""
     log "════════════════════════════════════════════════════════════════"
 }
