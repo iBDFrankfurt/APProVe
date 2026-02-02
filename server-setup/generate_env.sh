@@ -1,66 +1,234 @@
 #!/bin/bash
 
-# Define the input and output files
-input_env_file=".env.tmp"
-output_env_file=".env"
+#==================================================================================
+# APProVe Environment Configuration Generator
+# Version: 4.0.0
+# Description: Interactive script to generate .env file from template
+#==================================================================================
 
-# Copy the .env.tmp file to .env
-cp "$input_env_file" "$output_env_file"
+set -e
 
-# Function to generate a random hexadecimal key
-generate_random_key() {
-  openssl rand -hex 32
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+INPUT_ENV_FILE=".env.tmp"
+OUTPUT_ENV_FILE=".env"
+
+#----------------------------------------------------------------------------------
+# Banner
+#----------------------------------------------------------------------------------
+clear
+echo -e "${BLUE}"
+cat << "EOF"
+╔═══════════════════════════════════════════════════════════╗
+║                                                           ║
+║         APProVe Environment Configuration                 ║
+║                  Version 4.0.0                            ║
+║                                                           ║
+╚═══════════════════════════════════════════════════════════╝
+EOF
+echo -e "${NC}"
+
+#----------------------------------------------------------------------------------
+# Check Prerequisites
+#----------------------------------------------------------------------------------
+echo -e "${BLUE}Checking prerequisites...${NC}"
+
+if ! command -v openssl &> /dev/null; then
+    echo -e "${RED}✗ openssl is not installed.${NC}"
+    echo "Please install openssl and try again."
+    exit 1
+fi
+
+if [ ! -f "$INPUT_ENV_FILE" ]; then
+    echo -e "${RED}✗ Template file $INPUT_ENV_FILE not found.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✓ Prerequisites satisfied${NC}"
+echo ""
+
+#----------------------------------------------------------------------------------
+# Copy Template
+#----------------------------------------------------------------------------------
+echo -e "${BLUE}Creating .env file from template...${NC}"
+cp "$INPUT_ENV_FILE" "$OUTPUT_ENV_FILE"
+
+# Remove carriage returns (Windows compatibility)
+tr -d '\r' < "$OUTPUT_ENV_FILE" > .env.unix
+mv .env.unix "$OUTPUT_ENV_FILE"
+
+echo -e "${GREEN}✓ Template copied${NC}"
+echo ""
+
+#----------------------------------------------------------------------------------
+# Generate Encryption Key
+#----------------------------------------------------------------------------------
+echo -e "${BLUE}Generating encryption key...${NC}"
+
+if ! grep -q "^ENCRYPTION_KEY=" "$OUTPUT_ENV_FILE"; then
+    ENCRYPTION_KEY=$(openssl rand -hex 32)
+    cat >> "$OUTPUT_ENV_FILE" << EOF
+
+#----------------------------------------------------------------------------------
+# ENCRYPTION KEY (Auto-generated)
+# Generated: $(date)
+#----------------------------------------------------------------------------------
+ENCRYPTION_KEY=$ENCRYPTION_KEY
+EOF
+    echo -e "${GREEN}✓ Encryption key generated${NC}"
+else
+    echo -e "${YELLOW}⚠ Encryption key already exists, skipping...${NC}"
+fi
+
+echo ""
+
+#----------------------------------------------------------------------------------
+# Interactive Configuration
+#----------------------------------------------------------------------------------
+echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
+echo -e "${BLUE}           Interactive Configuration                       ${NC}"
+echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
+echo ""
+echo "Please provide the following information."
+echo "Press ENTER to keep the current/default value shown in brackets."
+echo ""
+
+# Function to prompt for variable
+prompt_for_variable() {
+    local var_name="$1"
+    local var_description="$2"
+    local is_password="${3:-false}"
+
+    # Get current value
+    local current_value
+    current_value=$(grep "^${var_name}=" "$OUTPUT_ENV_FILE" | cut -d '=' -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+    # Display prompt
+    if [ "$is_password" = "true" ]; then
+        echo -e "${YELLOW}${var_description}${NC}"
+        read -s -p "  [$current_value]: " new_value
+        echo ""
+    else
+        echo -e "${YELLOW}${var_description}${NC}"
+        read -p "  [$current_value]: " new_value
+    fi
+
+    # Use current value if input is empty
+    new_value="${new_value:-$current_value}"
+
+    # Update .env file
+    if grep -q "^${var_name}=" "$OUTPUT_ENV_FILE"; then
+        sed -i "s|^${var_name}=.*|${var_name}=${new_value}|" "$OUTPUT_ENV_FILE"
+    else
+        echo "${var_name}=${new_value}" >> "$OUTPUT_ENV_FILE"
+    fi
 }
 
-# Check if ENCRYPTION_KEY is already set, if not, generate a new key
-if ! grep -q "^CONTAINER_NAME_SUFFIX=" "$output_env_file"; then
-  new_key=$(generate_random_key)
-  echo -e "# Used for encryption\n# You can generate it by: openssl rand -hex 32" >> "$output_env_file"
-  echo "ENCRYPTION_KEY=$new_key" >> "$output_env_file"
-fi
+#----------------------------------------------------------------------------------
+# Domain Configuration
+#----------------------------------------------------------------------------------
+echo -e "${BLUE}─── Domain Configuration ───${NC}"
+echo ""
 
-if ! grep -q "^CONTAINER_NAME_SUFFIX=" "$output_env_file"; then
-  echo -e "#---------------------------------------------------------------------------------------------------------\n# Only important if approve runs multiple times on the same server. Adjusts the container names\n # Can be left blank" >> "$output_env_file"
-  echo "CONTAINER_NAME_SUFFIX=" >> "$output_env_file"
-fi
+prompt_for_variable "APPROVE_KEYCLOAK_URL" "Keycloak URL (e.g., https://auth.example.com)"
+prompt_for_variable "APPROVE_FRONTEND_URL" "Frontend URL (e.g., https://approve.example.com)"
+prompt_for_variable "APPROVE_BACKEND_URL" "Backend URL (e.g., https://backend.example.com)"
 
-# List of environment variables to update
-variables_to_update=(
-  "APPROVE_POSTGRES_USER"
-  "APPROVE_POSTGRES_PASSWORD"
-  "APPROVE_MONGO_USER"
-  "APPROVE_MONGO_PASSWORD"
-  "KEYCLOAK_REALM_NAME"
-  "APPROVE_KEYCLOAK_ADMIN_USER"
-  "APPROVE_KEYCLOAK_ADMIN_PASSWORD"
-  "APPROVE_KEYCLOAK_URL"
-  "APPROVE_FRONTEND_URL"
-  "KEYCLOAK_USER_NAME"
-  "KEYCLOAK_USER_PASSWORD"
-  "APPROVE_ADMIN_USER"
-  "APPROVE_ADMIN_PASSWORD"
-  "APPROVE_ADMIN_EMAIL"
-)
+echo ""
 
-# Loop through the list and update the variables
-for variable in "${variables_to_update[@]}"; do
-  current_value=$(grep "^$variable=" "$output_env_file" | cut -d '=' -f2)
-  read -r -p "Enter a new value for $variable (current: $current_value): " new_value
-  # Use the current value if the user input is empty
-  new_value="${new_value:-$current_value}"
-  # Replace or add the variable in .env
-  if [ -z "$current_value" ]; then
-    echo "$variable=$new_value" >> "$output_env_file"
-  else
-    # Use a different delimiter for sed
-    delimiter="|"
-    sed -i "s$delimiter$variable=.*$delimiter$variable=$new_value$delimiter" "$output_env_file"
-  fi
-done
+#----------------------------------------------------------------------------------
+# Keycloak Configuration
+#----------------------------------------------------------------------------------
+echo -e "${BLUE}─── Keycloak Configuration ───${NC}"
+echo ""
 
-# Perform variable substitution using envsubst to generate .env
-export "$(grep -v '^#' "$output_env_file" | xargs)"
-envsubst < "$output_env_file" > "temp.env"
-mv "temp.env" "$output_env_file"
+prompt_for_variable "KEYCLOAK_REALM_NAME" "Keycloak Realm Name"
+prompt_for_variable "APPROVE_KEYCLOAK_ADMIN_USER" "Keycloak Admin Username"
+prompt_for_variable "APPROVE_KEYCLOAK_ADMIN_PASSWORD" "Keycloak Admin Password" true
+prompt_for_variable "KEYCLOAK_USER_NAME" "Keycloak Service User (for API access)"
+prompt_for_variable "KEYCLOAK_USER_PASSWORD" "Keycloak Service User Password" true
 
-echo "Environment variables have been updated in $output_env_file."
+echo ""
+
+#----------------------------------------------------------------------------------
+# APProVe Admin User
+#----------------------------------------------------------------------------------
+echo -e "${BLUE}─── APProVe Admin User ───${NC}"
+echo ""
+
+prompt_for_variable "APPROVE_ADMIN_USER" "APProVe Admin Username"
+prompt_for_variable "APPROVE_ADMIN_PASSWORD" "APProVe Admin Password" true
+prompt_for_variable "APPROVE_ADMIN_EMAIL" "APProVe Admin Email"
+
+echo ""
+
+#----------------------------------------------------------------------------------
+# Database Configuration
+#----------------------------------------------------------------------------------
+echo -e "${BLUE}─── Database Configuration ───${NC}"
+echo ""
+
+prompt_for_variable "APPROVE_POSTGRES_USER" "PostgreSQL Username"
+prompt_for_variable "APPROVE_POSTGRES_PASSWORD" "PostgreSQL Password" true
+prompt_for_variable "APPROVE_MONGO_USER" "MongoDB Username"
+prompt_for_variable "APPROVE_MONGO_PASSWORD" "MongoDB Password" true
+
+echo ""
+
+#----------------------------------------------------------------------------------
+# Optional: Container Name Suffix
+#----------------------------------------------------------------------------------
+echo -e "${BLUE}─── Optional Settings ───${NC}"
+echo ""
+
+prompt_for_variable "CONTAINER_NAME_SUFFIX" "Container Name Suffix (leave empty for single instance)"
+
+echo ""
+
+#----------------------------------------------------------------------------------
+# Perform Variable Substitution
+#----------------------------------------------------------------------------------
+echo -e "${BLUE}Performing variable substitution...${NC}"
+
+# Export all variables from .env
+set -o allexport
+source "$OUTPUT_ENV_FILE"
+set +o allexport
+
+# Substitute variables in .env
+envsubst < "$OUTPUT_ENV_FILE" > .env.temp
+mv .env.temp "$OUTPUT_ENV_FILE"
+
+echo -e "${GREEN}✓ Variable substitution complete${NC}"
+echo ""
+
+#----------------------------------------------------------------------------------
+# Summary
+#----------------------------------------------------------------------------------
+echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
+echo -e "${GREEN}           Configuration Complete!                         ${NC}"
+echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
+echo ""
+echo "Configuration file created: ${OUTPUT_ENV_FILE}"
+echo ""
+echo -e "${YELLOW}Key Configuration:${NC}"
+echo "  • Keycloak URL:  $(grep '^APPROVE_KEYCLOAK_URL=' .env | cut -d'=' -f2)"
+echo "  • Frontend URL:  $(grep '^APPROVE_FRONTEND_URL=' .env | cut -d'=' -f2)"
+echo "  • Backend URL:   $(grep '^APPROVE_BACKEND_URL=' .env | cut -d'=' -f2)"
+echo "  • Realm Name:    $(grep '^KEYCLOAK_REALM_NAME=' .env | cut -d'=' -f2)"
+echo ""
+echo -e "${BLUE}Next Steps:${NC}"
+echo "  1. Review the .env file and verify all settings"
+echo "  2. Run: ${YELLOW}bash generate_nginx_conf.sh${NC}"
+echo "  3. Configure SSL with: ${YELLOW}sudo certbot --nginx${NC}"
+echo "  4. Run: ${YELLOW}bash install.sh${NC}"
+echo ""
+echo -e "${RED}⚠  IMPORTANT SECURITY NOTE:${NC}"
+echo "   Make sure to change all default passwords before going to production!"
+echo "   Protect your .env file - it contains sensitive credentials."
+echo ""

@@ -242,7 +242,7 @@ check_service() {
 }
 
 check_service "Frontend" "http://localhost:8001/actuator/health"
-check_service "Backend" "http://localhost:8000/api/health"
+check_service "Backend" "http://localhost:8000/api/actuator/health"
 check_service "Keycloak" "http://localhost:8080/health"
 check_service "Eureka" "http://localhost:8761/actuator/health"
 
