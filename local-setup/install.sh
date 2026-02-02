@@ -1,210 +1,501 @@
 #!/bin/bash
-# Script to configure Keycloak and related services locally.
-# As of now it is untested on a server architecture and only for local deployments. I can be adjusted to run of a server though.
-# The script will do the following things:
-# 1. Check if docker, docker-compose and git are installed
-# 2. Checks if the .env file is present
-# 3. Login to the registry for APProVe Images
-# 4. Downloads the custom made themes for keycloak from https://gitlab.ibdf-frankfurt.de/proskive/keycloak-themes.git
-# 5. Downloads the custom made keycloak-event-listener to update the database of APProVe https://gitlab.ibdf-frankfurt.de/uct/keycloak-event-listener.git
-# 6. Creates the APProVe Docker Network and pulls the latest versions
-# 7. Starts all services
-# 8. After the services started it will begin to configure Keycloak based on the provides .env file
-# 8.1 Create new realm
-# 8.2 Creates user to communicate between APProVe and Keycloak
-# 8.3 Sets the previously downloaded keycloak-event-listener to this realm
-# 8.4 Creates a client in Keycloak
-# 8.5 Creates a default admin role
-# 8.6 Creates an admin user with that admin role
-# 8.7 Checks if the role and admin user were created in APProVe
 
+#==================================================================================
+# APProVe Local Installation Script
+# Version: 4.0.0
+# Description: Automated setup for APProVe microservices ecosystem
+#==================================================================================
 
-# Check if Docker, docker-compose, and git are installed
-if ! command -v docker &> /dev/null; then
-    echo "Docker is not installed. Please install Docker and try again."
-    exit 1
-fi
+set -e  # Exit on any error
+set -o pipefail  # Catch errors in pipes
 
-if ! command -v docker-compose &> /dev/null; then
-    echo "docker-compose is not installed. Please install docker-compose and try again."
-    exit 1
-fi
+#----------------------------------------------------------------------------------
+# CONFIGURATION
+#----------------------------------------------------------------------------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOG_FILE="${SCRIPT_DIR}/install.log"
+REGISTRY="registry.gitlab.ibdf-frankfurt.de"
+REQUIRED_MEMORY_GB=6
+REQUIRED_DISK_GB=2
 
-if ! command -v git &> /dev/null; then
-    echo "git is not installed. Please install git and try again."
-    exit 1
-fi
+#----------------------------------------------------------------------------------
+# COLOR CODES
+#----------------------------------------------------------------------------------
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-echo "-----------------------------------------------------"
-echo "   Starting APProVe installation "
-echo "-----------------------------------------------------"
+#----------------------------------------------------------------------------------
+# LOGGING FUNCTIONS
+#----------------------------------------------------------------------------------
+log() {
+    echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1" | tee -a "$LOG_FILE"
+}
 
+log_error() {
+    echo -e "${RED}[$(date +'%Y-%m-%d %H:%M:%S')] ERROR:${NC} $1" | tee -a "$LOG_FILE"
+}
 
-# Check if .env file is present and read variables from it
-echo "Checking if .env file is present..."
-if [ -e ".env" ]; then
-  echo "File .env found."
-  echo "removing carriage return (CR) ..."
-  tr -d '\r' < .env > .env.temp
-  mv .env.temp .env
-  source .env
-  # Loop through the variables and print key-value pairs without comments
-  echo "Variables defined in .env:"
-  while IFS= read -r line; do
-    # Ignore lines starting with "#" (comments) or empty lines
-    if [[ "$line" =~ ^[[:space:]]*# || -z "$line" ]]; then
-      continue
+log_warning() {
+    echo -e "${YELLOW}[$(date +'%Y-%m-%d %H:%M:%S')] WARNING:${NC} $1" | tee -a "$LOG_FILE"
+}
+
+log_info() {
+    echo -e "${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')] INFO:${NC} $1" | tee -a "$LOG_FILE"
+}
+
+#----------------------------------------------------------------------------------
+# BANNER
+#----------------------------------------------------------------------------------
+show_banner() {
+    clear
+    echo -e "${BLUE}"
+    cat << "EOF"
+    ╔═══════════════════════════════════════════════════════════╗
+    ║                                                           ║
+    ║              APProVe Installation Script                  ║
+    ║                    Version 4.0.0                          ║
+    ║                                                           ║
+    ╚═══════════════════════════════════════════════════════════╝
+EOF
+    echo -e "${NC}"
+}
+
+#----------------------------------------------------------------------------------
+# HEALTH CHECK FUNCTION
+#----------------------------------------------------------------------------------
+wait_for_container() {
+    local container_name="$1"
+    local service_name="$2"
+    local max_retries="${3:-60}"
+    local count=0
+
+    log_info "Waiting for ${service_name} container to be healthy..."
+
+    while [ $count -lt $max_retries ]; do
+        local status=$(docker inspect --format='{{.State.Health.Status}}' "$container_name" 2>/dev/null || echo "unstarted")
+
+        if [ "$status" == "healthy" ]; then
+            log "✅ ${service_name} is healthy!"
+            return 0
+        fi
+
+        echo -n "."
+        sleep 2
+        count=$((count + 1))
+    done
+
+    log_error "Timeout waiting for ${service_name}."
+    return 1
+}
+wait_for_service() {
+    local url="$1"
+    local service_name="$2"
+    local max_retries="${3:-60}"
+    local count=0
+
+    log_info "Waiting for ${service_name} to be ready at ${url}..."
+
+    while [ $count -lt $max_retries ]; do
+        local response_code
+        response_code=$(curl -s -o /dev/null -w "%{http_code}" "$url" 2>/dev/null || echo "000")
+        log_info "Debug: ${service_name} returned status ${response_code}"
+        if [[ "$response_code" == "200" || "$response_code" == "401" || "$response_code" == "403" || "$response_code" == "404" ]]; then
+            log "✅ ${service_name} is ready!"
+            return 0
+        fi
+
+        echo -n "."
+        sleep 5
+        count=$((count + 1))
+    done
+
+    log_error "Timeout waiting for ${service_name}."
+    log_error "Check logs: docker logs approve.${service_name,,}"
+    return 1
+}
+
+#----------------------------------------------------------------------------------
+# PREREQUISITE CHECKS
+#----------------------------------------------------------------------------------
+check_prerequisites() {
+    log "🔍 Checking system prerequisites..."
+
+    # Check required binaries
+    local required_bins=("docker" "docker-compose" "git" "curl")
+    for cmd in "${required_bins[@]}"; do
+        if ! command -v "$cmd" &> /dev/null; then
+            log_error "${cmd} is not installed."
+            log_error "Please install ${cmd} and try again."
+            exit 1
+        fi
+    done
+    log "✅ All required binaries found."
+
+    # Check Docker daemon
+    if ! docker info > /dev/null 2>&1; then
+        log_error "Docker daemon is not running."
+        log_error "Please start Docker Desktop/Daemon and try again."
+        exit 1
+    fi
+    log "✅ Docker daemon is running."
+
+    # Check Docker Compose version
+    local compose_version=$(docker-compose --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    log_info "Docker Compose version: ${compose_version}"
+
+    # Check available memory
+    if command -v free &> /dev/null; then
+        local available_memory_gb=$(free -g | awk '/^Mem:/{print $7}')
+        if [ "$available_memory_gb" -lt "$REQUIRED_MEMORY_GB" ]; then
+            log_warning "Available memory (${available_memory_gb}GB) is below recommended (${REQUIRED_MEMORY_GB}GB)."
+            log_warning "Performance may be degraded."
+        else
+            log "✅ Sufficient memory available (${available_memory_gb}GB)."
+        fi
     fi
 
-    # Extract key (portion before '=') and value (portion after '=')
-    key="${line%%=*}"
-    value="${line#*=}"
-
-    # Print key and value
-    echo "$key = $value"
-  done < .env
-else
-  echo "File .env not found. Exiting."
-  exit 1
-fi
-
-echo "$APPROVE_POSTGRES_USER"
-echo "$APPROVE_PROJECT_DB"
-
-# Clone the Keycloak Themes and keycloak event listener SPI repositories
-echo "Getting the Keycloak Themes..."
-GIT_SSL_NO_VERIFY=1 git clone https://gitlab.ibdf-frankfurt.de/proskive/keycloak-themes.git
-
-echo "Getting the keycloak event listener SPI..."
-GIT_SSL_NO_VERIFY=1 git clone https://gitlab.ibdf-frankfurt.de/uct/keycloak-event-listener.git
-
-# Create a Docker network and start the services using docker-compose
-echo "Create network"
-docker network create approve_network
-docker-compose pull && docker-compose up -d auth eureka-service
-
-# Wait for services to be ready before continuing
-echo "Waiting for services to be ready..."
-# Define the API endpoints to check
-keycloak_endpoint="${APPROVE_KEYCLOAK_URL}/health"
-
-is_endpoint_available() {
-    local response_code
-    response_code=$(curl -s -o /dev/null -w "%{http_code}" "$1")
-    echo "curl backend at ${backend_endpoint} returned ${response_code}"
-    echo "curl auth at ${keycloak_endpoint} returned ${response_code}"
-    if [[ "$response_code" = "200" || "$response_code" = "401" ]]; then
-        return 0  # Endpoint is available
+    # Check available disk space
+    local available_disk_gb=$(df -BG "$SCRIPT_DIR" | awk 'NR==2 {print $4}' | sed 's/G//')
+    if [ "$available_disk_gb" -lt "$REQUIRED_DISK_GB" ]; then
+        log_warning "Available disk space (${available_disk_gb}GB) is below recommended (${REQUIRED_DISK_GB}GB)."
     else
-        return 1  # Endpoint is not available
+        log "✅ Sufficient disk space available (${available_disk_gb}GB)."
     fi
 }
 
-sleep 5
-while ! is_endpoint_available "$keycloak_endpoint"; do
-    echo "Waiting for keycloak..."
-    docker logs "approve.auth${CONTAINER_NAME_SUFFIX}"
-    sleep 10
-done
+#----------------------------------------------------------------------------------
+# REGISTRY AUTHENTICATION CHECK
+#----------------------------------------------------------------------------------
+check_registry_auth() {
+    log "🔐 Checking registry authentication..."
 
-echo "Keycloak is running. Configure keycloak..."
+    if ! grep -q "$REGISTRY" ~/.docker/config.json 2>/dev/null; then
+        log_warning "Not authenticated with ${REGISTRY}."
+        log_info "Please authenticate now..."
 
-# Log in to Keycloak with the master user based on .env-file
-echo "Logging in to Keycloak with master user based on .env-file..."
-docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh config credentials --server \"$APPROVE_KEYCLOAK_URL\" --realm master --user \"$APPROVE_KEYCLOAK_ADMIN_USER\" --password \"$APPROVE_KEYCLOAK_ADMIN_PASSWORD\""
+        if ! docker login "$REGISTRY"; then
+            log_error "Registry authentication failed."
+            exit 1
+        fi
+    fi
 
-# Create a new realm in Keycloak
-echo "Creating realm..."
-docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh create realms -s realm=\"$KEYCLOAK_REALM_NAME\" -s enabled=true -s 'accountTheme=custom-theme' -o"
-docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh get realms/\"$KEYCLOAK_REALM_NAME\" --fields realm,enabled,accountTheme"
+    log "✅ Authenticated with ${REGISTRY}."
+}
+
+#----------------------------------------------------------------------------------
+# ENVIRONMENT SETUP
+#----------------------------------------------------------------------------------
+setup_environment() {
+    log "⚙️  Setting up environment..."
+
+    if [ ! -f "${SCRIPT_DIR}/.env" ]; then
+        log_error ".env file not found in ${SCRIPT_DIR}."
+        log_error "Please ensure .env file exists and try again."
+        exit 1
+    fi
+
+    # Fix CRLF line endings (Windows compatibility)
+    if command -v dos2unix &> /dev/null; then
+        dos2unix "${SCRIPT_DIR}/.env" 2>/dev/null || true
+    else
+        tr -d '\r' < "${SCRIPT_DIR}/.env" > "${SCRIPT_DIR}/.env.unix" && mv "${SCRIPT_DIR}/.env.unix" "${SCRIPT_DIR}/.env"
+    fi
+
+    # Load environment variables
+    set -o allexport
+    source "${SCRIPT_DIR}/.env"
+    set +o allexport
+
+    log "✅ Environment configured."
+}
+
+#----------------------------------------------------------------------------------
+# GIT REPOSITORIES UPDATE
+#----------------------------------------------------------------------------------
+update_dependencies() {
+    log "📦 Updating project dependencies..."
+
+    update_repo() {
+        local url="$1"
+        local dir="$2"
+
+        if [ -d "$dir/.git" ]; then
+            log_info "Updating ${dir}..."
+            (cd "$dir" && git pull --quiet) || log_warning "Failed to update ${dir}"
+        else
+            log_info "Cloning ${dir}..."
+
+            if [ -d "$dir" ]; then
+                log_warning "${dir} exists but is not a git repo. Removing it."
+                rm -rf "$dir"
+            fi
+
+            git clone "$url" "$dir" || {
+                log_error "Failed to clone ${dir}"
+                exit 1
+            }
+        fi
+    }
+
+    update_repo "https://gitlab.ibdf-frankfurt.de/proskive/keycloak-themes.git" "keycloak-themes"
+    update_repo "https://gitlab.ibdf-frankfurt.de/uct/keycloak-event-listener.git" "keycloak-event-listener"
+
+    # Build Keycloak event listener if needed
+    if [ -d "keycloak-event-listener" ] && [ -f "keycloak-event-listener/pom.xml" ]; then
+        log_info "Building Keycloak event listener..."
+        if command -v mvn &> /dev/null; then
+            (cd keycloak-event-listener && mvn clean package -q) || log_warning "Maven build failed"
+        else
+            log_warning "Maven not found. Skipping event listener build."
+        fi
+    fi
+
+    log "✅ Dependencies updated."
+}
+
+#----------------------------------------------------------------------------------
+# DOCKER NETWORK SETUP
+#----------------------------------------------------------------------------------
+setup_network() {
+    log "🌐 Setting up Docker network..."
+
+    if ! docker network ls | grep -q "approve_network"; then
+        docker network create approve_network
+        log "✅ Network 'approve_network' created."
+    else
+        log_info "Network 'approve_network' already exists."
+    fi
+}
+
+#----------------------------------------------------------------------------------
+# DOCKER COMPOSE OPERATIONS
+#----------------------------------------------------------------------------------
+start_core_services() {
+    log "🚀 Starting core infrastructure services..."
+
+    docker-compose pull --quiet
+
+    log_info "Starting PostgreSQL..."
+    docker-compose up -d postgres
+    # Use container health check for DB
+    wait_for_container "approve.postgres" "PostgreSQL" 30 || exit 1
+
+    log_info "Starting MongoDB..."
+    docker-compose up -d mongo
+    # Use container health check for DB
+    wait_for_container "approve.mongo" "MongoDB" 30 || exit 1
+
+    log_info "Starting Configuration Service..."
+    docker-compose up -d config-service
+    wait_for_service "http://localhost:${CONFIG_PORT}/actuator/health" "config-service" 60 || exit 1
+
+    log_info "Starting Eureka Service Registry..."
+    docker-compose up -d eureka-service
+    wait_for_service "http://localhost:${EUREKA_PORT}/actuator/health" "eureka" 60 || exit 1
+
+    log_info "Starting Keycloak..."
+    docker-compose up -d auth
+    wait_for_service "${APPROVE_KEYCLOAK_URL}/health/live" "keycloak" 120 || exit 1
+}
+
+#----------------------------------------------------------------------------------
+# PHASE 1: KEYCLOAK INFRASTRUCTURE (Realm, Client, Service User)
+#----------------------------------------------------------------------------------
+configure_keycloak_infrastructure() {
+    log "🔧 Configuring Keycloak Infrastructure (Realm, Client, Service User)..."
+
+    docker exec approve.auth bash -c "
+        set -e
+        KC=/opt/keycloak/bin/kcadm.sh
+
+        # Login
+        \$KC config credentials --server '$APPROVE_KEYCLOAK_URL' --realm master --user '$APPROVE_KEYCLOAK_ADMIN_USER' --password '$APPROVE_KEYCLOAK_ADMIN_PASSWORD'
+
+        # 1. Create Realm
+        echo '[KC] Create realm'
+        \$KC create realms -s realm='$KEYCLOAK_REALM_NAME' -s enabled=true -s accountTheme=custom-theme -o || true
+
+        # 2. Create Client Scope
+        echo '[KC] Create OpenID client scope'
+        \$KC create client-scopes -r '$KEYCLOAK_REALM_NAME' -s name=openid -s protocol=openid-connect -s consentRequired=false || true
+
+        # 3. Create Client (Web App)
+        echo '[KC] Create APProVe client'
+        \$KC create clients -r '$KEYCLOAK_REALM_NAME' -s clientId='$APPROVE_CLIENT_ID' -s rootUrl='$APPROVE_FRONTEND_URL' -s \"redirectUris=[\\\"$APPROVE_FRONTEND_URL/*\\\"]\" -s \"webOrigins=[\\\"$APPROVE_FRONTEND_URL/*\\\"]\" -s publicClient=true -s directAccessGrantsEnabled=true -s attributes.login_theme=custom-theme || true
+
+        # 4. Create Service User (restuser) - Required for Backend to start
+        echo '[KC] Create service user (restuser)'
+        \$KC create users -r '$KEYCLOAK_REALM_NAME' -s username='$KEYCLOAK_USER_NAME' -s enabled=true -s emailVerified=true || true
+
+        echo '[KC] Set service user password'
+        \$KC set-password -r '$KEYCLOAK_REALM_NAME' --username '$KEYCLOAK_USER_NAME' --new-password '$KEYCLOAK_USER_PASSWORD'
+
+        echo '[KC] Assign realm-admin role to service user'
+        \$KC add-roles -r '$KEYCLOAK_REALM_NAME' --uusername '$KEYCLOAK_USER_NAME' --cclientid realm-management --rolename realm-admin
+
+        # 5. Enable Event Listener (So next steps trigger the SPI)
+        # adminEventsEnabled=true        -> Triggers on kcadm.sh commands
+        # adminEventsDetailsEnabled=true -> Includes the JSON body
+        echo '[KC] Configure event listeners'
+        \$KC update events/config -r '$KEYCLOAK_REALM_NAME' \
+            -s 'eventsListeners=[\"jboss-logging\",\"sample_event_listener\"]' \
+            -s adminEventsEnabled=true \
+            -s adminEventsDetailsEnabled=true
+    "
+    log "✅ Keycloak Infrastructure ready."
+}
+
+#----------------------------------------------------------------------------------
+# PHASE 2: ADMIN USER (Triggers SPI -> Backend)
+#----------------------------------------------------------------------------------
+create_approve_admin() {
+    log "👤 Creating Admin User & Role (Triggering SPI Sync)..."
+
+    docker exec approve.auth bash -c "
+        set -e
+        KC=/opt/keycloak/bin/kcadm.sh
+
+        # Login
+        \$KC config credentials --server '$APPROVE_KEYCLOAK_URL' --realm master --user '$APPROVE_KEYCLOAK_ADMIN_USER' --password '$APPROVE_KEYCLOAK_ADMIN_PASSWORD'
+
+        # 1. CREATE ROLE (Triggers SPI -> Backend 'createRole')
+        # This sends the role JSON to APProVe
+        echo '[KC] Create Admin Role'
+        \$KC create roles -r '$KEYCLOAK_REALM_NAME' -s name='APPROVE_ADMIN_ROLE' -s 'attributes={\"is_admin\":[true]}' -s 'description=Approve Admin Role' || true
+
+        # 2. CREATE USER (Triggers SPI -> Backend 'createUser')
+        # This sends the user JSON to APProVe
+        echo '[KC] Create Admin User'
+        \$KC create users -r '$KEYCLOAK_REALM_NAME' -s username='$APPROVE_ADMIN_USER' -s enabled=true -s email='$APPROVE_ADMIN_EMAIL' -s emailVerified=true -s firstName='Admin' -s lastName='User' || true
+
+        # (Password setting does not usually trigger a backend sync, but is required for login)
+        \$KC set-password -r '$KEYCLOAK_REALM_NAME' --username '$APPROVE_ADMIN_USER' --new-password '$APPROVE_ADMIN_PASSWORD'
+
+        # 3. ASSIGN ROLE (Triggers SPI -> Backend 'addRolesToUser')
+        # This tells APProVe to link the user and the role
+        echo '[KC] Assign Admin Role to User'
+        \$KC add-roles -r '$KEYCLOAK_REALM_NAME' --uusername '$APPROVE_ADMIN_USER' --rolename 'APPROVE_ADMIN_ROLE'
+    "
+    log "✅ Admin creation events sent to Backend."
+}
 
 
-# Add a restuser for APProVe
-echo "Adding restuser for APProVe..."
-docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh create users -r \"$KEYCLOAK_REALM_NAME\" -s username=\"$KEYCLOAK_USER_NAME\" -s enabled=true -s \"emailVerified=true\""
+#----------------------------------------------------------------------------------
+# START APPLICATION SERVICES
+#----------------------------------------------------------------------------------
+start_application() {
+    log "🚀 Starting application services..."
 
-echo "Adding password..."
-docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh set-password -r \"$KEYCLOAK_REALM_NAME\" --username \"$KEYCLOAK_USER_NAME\" --new-password \"$KEYCLOAK_USER_PASSWORD\""
+    # 1. Start Backend specifically
+    log_info "Starting Backend Service..."
+    docker-compose up -d backend-service
 
-echo "Adding realm-management role..."
-docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh add-roles -r \"$KEYCLOAK_REALM_NAME\" --uusername \"$KEYCLOAK_USER_NAME\" --cclientid realm-management --rolename realm-admin"
+    # 2. WAIT for Backend
+    wait_for_service "${APPROVE_BACKEND_URL}/api/actuator/health" "backend-service" 180 || exit 1
 
-echo "Done setting restuser. Setting keycloak-event-listener..."
-docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh update events/config -r \"$KEYCLOAK_REALM_NAME\" -s 'eventsListeners=[\"jboss-logging\",\"sample_event_listener\"]'"
+    # 3. Create the Admin User (Backend is up, SPI will trigger)
+    create_approve_admin
 
-CLIENT_SCOPE_NAME="openid"
+    # 4. Start the rest of the stack
+    log_info "Starting remaining microservices..."
+    docker-compose up -d
 
-# Create the client scope and extract the ID
-docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh create client-scopes -r \"$KEYCLOAK_REALM_NAME\" -s name=\"$CLIENT_SCOPE_NAME\" -s protocol=openid-connect -s consentRequired=false"
+    log "✅ All services started."
+}
 
-clientScopes=$(docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh get client-scopes -r $KEYCLOAK_REALM_NAME  --fields 'id','name'")
+#----------------------------------------------------------------------------------
+# VERIFICATION
+#----------------------------------------------------------------------------------
+verify_installation() {
+    log "🔍 Verifying installation..."
 
-SID=$(echo "$clientScopes" | grep -B1 "\"name\" : \"$CLIENT_SCOPE_NAME\"" | grep -o '"id" : "[^"]*"' | awk -F'"' '{print $4}')
+    local failed_services=()
 
-if [ -n "$SID" ]; then
-  echo "ID for 'openid': $SID"
-else
-  echo "ID for 'openid' not found."
-fi
+    # Check service health
+    local services=(
+        "postgres:${POSTGRES_PORT}"
+        "mongo:${MONGO_PORT}"
+        "auth:${AUTH_PORT}"
+        "eureka:${EUREKA_PORT}"
+        "backend:${BACKEND_PORT}"
+        "frontend:${FRONTEND_PORT}"
+    )
 
-# Create a client protected by Keycloak
-echo "Creating Client which will be protected by Keycloak."
-docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh create clients -r \"$KEYCLOAK_REALM_NAME\" -s clientId=\"$APPROVE_CLIENT_ID\" -s 'rootUrl=\"$APPROVE_FRONTEND_URL\"' -s 'redirectUris=[\"$APPROVE_FRONTEND_URL/*\"]' -s 'webOrigins=[\"$APPROVE_FRONTEND_URL/*\"]' -s 'attributes.login_theme=custom-theme' -s 'directAccessGrantsEnabled=true' -s 'publicClient=true' -i"
-approveClient=$(docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh get clients -r $KEYCLOAK_REALM_NAME  --fields 'id' --query clientId=\"$APPROVE_CLIENT_ID\"")
-# Convert the client ID to lowercase to perform a case-insensitive search
-CID=$(echo "$approveClient" | grep -o '"id" : "[^"]*"' | awk -F'"' '{print $4}')
+    for service in "${services[@]}"; do
+        local name="${service%%:*}"
+        local port="${service##*:}"
 
-if [ -n "$CID" ]; then
-  echo "Client with clientId '$APPROVE_CLIENT_ID' found with id: $CID"
-else
-  echo "Client with clientId '$APPROVE_CLIENT_ID' not found."
-fi
+        if docker ps | grep -q "approve.${name}"; then
+            log_info "✅ ${name} is running on port ${port}"
+        else
+            log_warning "❌ ${name} is not running"
+            failed_services+=("${name}")
+        fi
+    done
 
-docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh update \"$APPROVE_KEYCLOAK_URL\"/admin/realms/\"$KEYCLOAK_REALM_NAME\"/clients/\"$CID\"/default-client-scopes/\"$SID\""
+    if [ ${#failed_services[@]} -gt 0 ]; then
+        log_warning "Some services failed to start: ${failed_services[*]}"
+        log_info "Check logs with: docker-compose logs <service-name>"
+    fi
+}
 
-echo "Done setting the client; $CID"
+#----------------------------------------------------------------------------------
+# CLEANUP FUNCTION
+#----------------------------------------------------------------------------------
+cleanup_on_error() {
+    log_error "Installation failed. Cleaning up..."
+    docker-compose down
+    exit 1
+}
 
-echo "Starting the backend."
+#----------------------------------------------------------------------------------
+# MAIN EXECUTION
+#----------------------------------------------------------------------------------
+main() {
+    # Trap errors
+    trap cleanup_on_error ERR
 
-echo "Press Enter to continue..."
-read -r
+    # Start installation
+    show_banner
+    log "🎬 Starting APProVe installation..."
+    log "📝 Log file: ${LOG_FILE}"
 
-docker-compose up -d backend-service
-backend_endpoint="${APPROVE_BACKEND_URL}/api/health"
-sleep 5
-while ! is_endpoint_available "$backend_endpoint"; do
-    echo "Waiting for backend to start..."
-    docker logs "approve.backend${CONTAINER_NAME_SUFFIX}"
-    sleep 10
-done
+    check_prerequisites
+    check_registry_auth
+    setup_environment
+    update_dependencies
+    setup_network
+    start_core_services
+    configure_keycloak_infrastructure
+    start_application
+    verify_installation
 
-# Create the default admin role in Keycloak and APProVe
-echo "Creating the default admin role in Keycloak and APProVe..."
-docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh create roles -r \"$KEYCLOAK_REALM_NAME\" -s name='APPROVE_ADMIN_ROLE' -s 'attributes={\"is_admin\":[true]}' -s 'description=This is the default APProVe-Admin Role.'"
+    # Success message
+    echo ""
+    log "════════════════════════════════════════════════════════════════"
+    log "🎉 APProVe installation completed successfully!"
+    log "════════════════════════════════════════════════════════════════"
+    echo ""
+    log_info "Access URLs:"
+    log_info "  • Frontend:  ${APPROVE_FRONTEND_URL}"
+    log_info "  • Keycloak:  ${APPROVE_KEYCLOAK_URL}"
+    log_info "  • Eureka:    http://localhost:${EUREKA_PORT}"
+    echo ""
+    log_info "Admin Credentials:"
+    log_info "  • Username:  ${APPROVE_ADMIN_USER}"
+    log_info "  • Password:  ${APPROVE_ADMIN_PASSWORD}"
+    echo ""
+    log_info "Useful Commands:"
+    log_info "  • View logs:     docker-compose logs -f [service-name]"
+    log_info "  • Stop all:      docker-compose down"
+    log_info "  • Restart:       docker-compose restart [service-name]"
+    log_info "  • View status:   docker-compose ps"
+    echo ""
+    log "════════════════════════════════════════════════════════════════"
+}
 
-# Finally, create the admin user to log in to APProVe
-echo "Creating admin user to log in to APProVe."
-docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh create users -r \"$KEYCLOAK_REALM_NAME\" -s username=\"$APPROVE_ADMIN_USER\" -s enabled=true -s 'email=\"$APPROVE_ADMIN_EMAIL\"' -s \"emailVerified=true\" -s 'firstName=\"$APPROVE_ADMIN_USER\"' -s 'lastName=\"Your_Last_Name\"' -s 'requiredActions=[\"VERIFY_EMAIL\",\"UPDATE_PROFILE\",\"terms_and_conditions\",\"update_password\"]'"
-
-docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh set-password -r \"$KEYCLOAK_REALM_NAME\" --username \"$APPROVE_ADMIN_USER\" --new-password \"$APPROVE_ADMIN_PASSWORD\""
-
-docker exec -t approve.auth sh -c "/opt/keycloak/bin/kcadm.sh add-roles -r \"$KEYCLOAK_REALM_NAME\" --uusername \"$APPROVE_ADMIN_USER\" --rolename 'APPROVE_ADMIN_ROLE'"
-
-echo "Starting the rest of the services."
-echo "Press Enter to continue..."
-read -r
-
-docker-compose up -d
-
-
-echo "================================================================================================="
-echo "Congratulations! Installation was complete!"
-echo "Please check the logs if there are any errors via: docker-compose logs -f"
-echo "You only need to run this install script once. After it successfully completed you can just use: docker-compose up -d in the future!"
-echo "You should now be able to log in $APPROVE_FRONTEND_URL"
-echo ">>> Depending on your system and installation, you may have to add NGINX entries or, if locally installed adjusting the hosts file. <<<"
-echo "For further documentation please visit https://gitlab.ibdf-frankfurt.de/uct/open-approve"
-echo "================================================================================================="
-# Wait for a key press without displaying a prompt
-echo "Press any key to exit..."
-read -n 1 -s -r -p ""
+# Run main function
+main "$@"

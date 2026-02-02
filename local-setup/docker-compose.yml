@@ -1,27 +1,41 @@
-version: '3'
+#==================================================================================
+# APProVe Microservices Stack - Local Development
+# Version: 4.0.0
+#==================================================================================
+
 services:
+  #--------------------------------------------------------------------------------
+  # AUTHENTICATION SERVICE (Keycloak)
+  #--------------------------------------------------------------------------------
   auth:
-    #-------------------------------------------------------------------------------------
-    # ==== Keycloak ====
-    #-------------------------------------------------------------------------------------
-    restart: always
+    restart: unless-stopped
     container_name: approve.auth
     image: ${KEYCLOAK_IMAGE}
+    hostname: approve.auth
     ports:
-      - ${AUTH_PORT}:8080
-    entrypoint: /opt/keycloak/bin/kc.sh start  --hostname-url=http://approve.auth:${AUTH_PORT} --health-enabled=true
+      - "${AUTH_PORT}:8080"
+    entrypoint: >
+      /opt/keycloak/bin/kc.sh start 
+      --hostname-url=http://approve.auth:${AUTH_PORT} 
+      --hostname-strict=false 
+      --http-enabled=true 
+      --health-enabled=true
     environment:
+      # Database Configuration
       KC_DB: postgres
       KC_DB_URL_DATABASE: ${APPROVE_AUTH_DB}
       KC_DB_URL_HOST: ${POSTGRES_CONTAINER_URL}
       KC_DB_USERNAME: ${APPROVE_POSTGRES_USER}
       KC_DB_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
-      KEYCLOAK_ADMIN:  ${APPROVE_KEYCLOAK_ADMIN_USER}
+
+      # Admin Credentials
+      KEYCLOAK_ADMIN: ${APPROVE_KEYCLOAK_ADMIN_USER}
       KEYCLOAK_ADMIN_PASSWORD: ${APPROVE_KEYCLOAK_ADMIN_PASSWORD}
-      #PROXY_ADDRESS_FORWARDING: "true"
-      #KC_HOSTNAME_STRICT: "false"
+
+      # HTTP Configuration
       KC_HTTP_ENABLED: "true"
-      #KC_PROXY: "edge"
+
+      # Custom Configuration
       REST_USER: ${KEYCLOAK_USER_NAME}
       REST_PASSWORD: ${KEYCLOAK_USER_PASSWORD}
       CLIENT_ID: ${KEYCLOAK_REST_CLIENT_ID}
@@ -30,187 +44,270 @@ services:
       KEYCLOAK_URL: ${APPROVE_KEYCLOAK_URL}
       BACKEND_SERVICE_URL: ${APPROVE_BACKEND_URL}
     volumes:
-      #-------------------------------------------------------------------------------------
-      # ==== Create and add your own login Theme and paste it like this ====
-      #-------------------------------------------------------------------------------------
-      - "./keycloak-themes/themes/uct:/opt/keycloak/themes/custom-theme"
-      #-------------------------------------------------------------------------------------
-      # ==== This SPI sends data from keycloak to the backend-service ====
-      #-------------------------------------------------------------------------------------
-      - "./keycloak-event-listener/target/:/opt/keycloak/providers/"
+      - ./keycloak-themes/themes/uct:/opt/keycloak/themes/custom-theme:ro
+      - ./keycloak-event-listener/target/:/opt/keycloak/providers/
+    healthcheck:
+      test: [ 'CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:8080/health/live' ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - approve_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  #--------------------------------------------------------------------------------
+  # POSTGRESQL DATABASE
+  #--------------------------------------------------------------------------------
   postgres:
-    # -------------------------------------------------------------------------------------
-    # ==== Database for project based objects ====
-    # -------------------------------------------------------------------------------------
-    restart: always
+    restart: unless-stopped
     container_name: approve.postgres
     image: ${POSTGRES_IMAGE}
+    hostname: approve.postgres
     expose:
       - ${POSTGRES_PORT}
     ports:
-      - ${POSTGRES_PORT}:5432
+      - "${POSTGRES_PORT}:5432"
     environment:
       POSTGRES_USER: ${APPROVE_POSTGRES_USER}
       POSTGRES_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
       POSTGRES_DB: ${APPROVE_AUTH_DB}
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - "postgres_data:/var/lib/postgresql/data"
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${APPROVE_POSTGRES_USER} -d ${APPROVE_AUTH_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - approve_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  #--------------------------------------------------------------------------------
+  # MONGODB DATABASE
+  #--------------------------------------------------------------------------------
+  mongo:
+    restart: unless-stopped
+    container_name: approve.mongo
+    image: ${MONGO_IMAGE}
+    hostname: approve.mongo
+    ports:
+      - "${MONGO_PORT}:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${APPROVE_MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${APPROVE_MONGO_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - approve_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  #--------------------------------------------------------------------------------
+  # CONFIGURATION SERVICE (Spring Cloud Config)
+  #--------------------------------------------------------------------------------
   config-service:
-    #-------------------------------------------------------------------------------------
-    # ==== ENV Configurations for spring boot ====
-    #-------------------------------------------------------------------------------------
-    restart: always
+    restart: unless-stopped
     container_name: approve.config
     image: ${CONFIG_IMAGE}
+    hostname: approve.config
     ports:
-      - ${CONFIG_PORT}:8888
+      - "${CONFIG_PORT}:8888"
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8888/actuator/health || exit 1" ]
+      interval: 10s       # Check more frequently
+      timeout: 5s
+      retries: 3
+      start_period: 15s   # Your app starts in 3s, so 60s was too long to wait
     networks:
       - approve_network
 
-  backend-service:
-    #-------------------------------------------------------------------------------------
-    # ==== Project based service for APProVe, mainly handles project creation/editing ====
-    #-------------------------------------------------------------------------------------
-    container_name: approve.backend
-    restart: always
-    image: ${BACKEND_IMAGE}
+  #--------------------------------------------------------------------------------
+  # SERVICE DISCOVERY (Eureka)
+  #--------------------------------------------------------------------------------
+  eureka-service:
+    restart: unless-stopped
+    container_name: approve.eureka
+    image: ${EUREKA_IMAGE}
+    hostname: approve.eureka
     ports:
-      - ${BACKEND_PORT}:8000
+      - "${EUREKA_PORT}:8761"
     environment:
-      # Keycloak variables
+      EUREKA_PORT: ${EUREKA_PORT}
+      CONFIG_PORT: ${CONFIG_PORT}
+      CONFIG_URL: ${CONFIG_CONTAINER_URL}
+      JAVA_OPTS: ${JAVA_OPTS_EUREKA}
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8761/actuator/health || exit 1" ]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      config-service:
+        condition: service_healthy
+    networks:
+      - approve_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  #--------------------------------------------------------------------------------
+  # BACKEND SERVICE (Project Management)
+  #--------------------------------------------------------------------------------
+  backend-service:
+    restart: unless-stopped
+    container_name: approve.backend
+    image: ${BACKEND_IMAGE}
+    hostname: approve.backend
+    ports:
+      - "${BACKEND_PORT}:8000"
+    environment:
+      # Keycloak Configuration
       APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
       APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
       APPROVE_CLIENT_ID: ${APPROVE_CLIENT_ID}
-      # Eureka variables
+
+      # Eureka Configuration
       APPROVE_EUREKA: ${EUREKA_URL}
       EUREKA_PREFER_IP_ADDRESS: "true"
       EUREKA_IP_ADDRESS: approve.backend
       INSTANCE_HOSTNAME: PROJECT-SERVICE
       EUREKA_URL: ${EUREKA_CONTAINER_URL}
       EUREKA_PORT: ${EUREKA_PORT}
-      # Postgres variables
+
+      # Database Configuration
       POSTGRES_USER: ${APPROVE_POSTGRES_USER}
       POSTGRES_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
       POSTGRES_URL: ${POSTGRES_CONTAINER_URL}
       POSTGRES_PORT: ${POSTGRES_PORT}
       DB_NAME: ${APPROVE_PROJECT_DB}
-      # Config-Service variables
+
+      # Config Service
       CONFIG_URL: ${CONFIG_CONTAINER_URL}
       CONFIG_PORT: ${CONFIG_PORT}
 
+      # Application URLs
       APPROVE_FRONTEND_URL: ${APPROVE_FRONTEND_URL}
-      JAVA_OPTS: "-XX:+UseSerialGC -XX:MaxRAM=1024m"
+
+      # JVM Options
+      JAVA_OPTS: ${JAVA_OPTS_BACKEND}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
     depends_on:
-      - postgres
-      - eureka-service
-      - config-service
+      postgres:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+      config-service:
+        condition: service_healthy
     networks:
       - approve_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  #--------------------------------------------------------------------------------
+  # FRONTEND SERVICE (Web UI)
+  #--------------------------------------------------------------------------------
   frontend-service:
-    #-------------------------------------------------------------------------------------
-    # ==== Spring Boot frontend with integrated vuejs bundle ====
-    #-------------------------------------------------------------------------------------
+    restart: unless-stopped
     container_name: approve.frontend
-    restart: always
     image: ${FRONTEND_IMAGE}
+    hostname: approve.frontend
     ports:
-      - ${FRONTEND_PORT}:8001
+      - "${FRONTEND_PORT}:8001"
     environment:
-      #Startup Variables
+      # Keycloak Configuration
       APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
       APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
       APPROVE_CLIENT_ID: ${APPROVE_CLIENT_ID}
+      APPROVE_KEYCLOAK_URL: ${APPROVE_KEYCLOAK_URL}
+
+      # Eureka Configuration
       APPROVE_EUREKA: ${EUREKA_URL}
       EUREKA_URL: ${EUREKA_CONTAINER_URL}
       EUREKA_PORT: ${EUREKA_PORT}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+      INSTANCE_HOSTNAME: PROJECT-WEB-SERVICE
+      EUREKA_PREFER_IP_ADDRESS: "true"
+      EUREKA_IP_ADDRESS: approve.frontend
+
+      # Config Service
       CONFIG_URL: ${CONFIG_CONTAINER_URL}
       CONFIG_PORT: ${CONFIG_PORT}
-      APPROVE_KEYCLOAK_URL: ${APPROVE_KEYCLOAK_URL}
-      # Backend URLS
+
+      # Backend Service URLs
       APPROVE_SELF_URL: ${APPROVE_FRONTEND_URL}
       APPROVE_BACKEND_URL: ${APPROVE_BACKEND_URL}
       APPROVE_USER_URL: ${APPROVE_USER_URL}
       APPROVE_COMMENTS_URL: ${APPROVE_COMMENTS_URL}
       APPROVE_AUTOMATION_URL: ${APPROVE_AUTOMATION_URL}
       APPROVE_MAIL_URL: ${APPROVE_MAIL_URL}
-      MANUAL_URL: ${APPROVE_MANUAL_URL}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
-      INSTANCE_HOSTNAME: PROJECT-WEB-SERVICE
-      EUREKA_PREFER_IP_ADDRESS: "true"
-      EUREKA_IP_ADDRESS: approve.frontend
-      FRONTEND_USER_LAYOUT: /css/approve-main.css
-      FRONTEND_ADMIN_LAYOUT: /css/approve-admin.css
       APPROVE_EMAIL_URL: ${APPROVE_FRONTEND_URL}
       APPROVE_DRAFT_URL: ${APPROVE_DRAFT_URL}
       APPROVE_IMPORT_URL: ${APPROVE_IMPORT_URL}
-    networks:
-      - approve_network
+      MANUAL_URL: ${APPROVE_MANUAL_URL}
 
-
-  eureka-service:
-    #-------------------------------------------------------------------------------------
-    # ==== Service Registry for backends ====
-    #-------------------------------------------------------------------------------------
-    restart: always
-    container_name: approve.eureka
-    image: ${EUREKA_IMAGE}
-    ports:
-      - ${EUREKA_PORT}:8761
-    environment:
-      EUREKA_PORT: ${EUREKA_PORT}
-      CONFIG_PORT: ${CONFIG_PORT}
-      CONFIG_URL: ${CONFIG_CONTAINER_URL}
-      JAVA_OPTS: "-XX:+UseSerialGC -XX:MaxRAM=512m -Xmx1G -Xms80m -XX:SharedArchiveFile=app-cds.jsa -XX:TieredStopAtLevel=1"
+      # UI Theme
+      FRONTEND_USER_LAYOUT: /css/approve-main.css
+      FRONTEND_ADMIN_LAYOUT: /css/approve-admin.css
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
     depends_on:
-      - config-service
+      backend-service:
+        condition: service_healthy
     networks:
       - approve_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  manual-service:
-    #-------------------------------------------------------------------------------------
-    # ==== Every APProVe instance get's its own manual ====
-    #-------------------------------------------------------------------------------------
-    restart: always
-    container_name: approve.manual
-    image: ${MANUAL_IMAGE}
-    ports:
-      - ${MANUAL_PORT}:443
-    networks:
-      - approve_network
-
-  mongo:
-    #-------------------------------------------------------------------------------------
-    # ==== Database for comments/templates/automation ====
-    #-------------------------------------------------------------------------------------
-    restart: always
-    container_name: approve.mongo
-    image: ${MONGO_IMAGE}
-    ports:
-      - ${MONGO_PORT}:27017
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${APPROVE_MONGO_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${APPROVE_MONGO_PASSWORD}
-    volumes:
-      - "mongo_data:/data/db"
-    networks:
-      - approve_network
-
+  #--------------------------------------------------------------------------------
+  # USER SERVICE (Identity Management)
+  #--------------------------------------------------------------------------------
   user-service:
-    #-------------------------------------------------------------------------------------
-    # ==== Checks users and roles in keycloak ====
-    #-------------------------------------------------------------------------------------
-    restart: always
+    restart: unless-stopped
     container_name: approve.user
     image: ${USER_IMAGE}
+    hostname: approve.user
+    ports:
+      - "${USER_PORT}:9001"
     environment:
       APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
       APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
@@ -226,23 +323,38 @@ services:
       APPROVE_KEYCLOAK_USER_NAME: ${KEYCLOAK_USER_NAME}
       APPROVE_KEYCLOAK_USER_PASSWORD: ${KEYCLOAK_USER_PASSWORD}
       APPROVE_KEYCLOAK_CLIENTID: ${APPROVE_CLIENT_ID}
-    ports:
-      - ${USER_PORT}:9001
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9001/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    depends_on:
+      auth:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
     networks:
       - approve_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  #--------------------------------------------------------------------------------
+  # COMMENTS SERVICE (Go-based microservice)
+  #--------------------------------------------------------------------------------
   comments-service:
-    #-------------------------------------------------------------------------------------
-    # ==== Mainly CRUD service in golang for comments ====
-    #-------------------------------------------------------------------------------------
-    restart: always
-    image: ${COMMENT_IMAGE}
+    restart: unless-stopped
     container_name: approve.comment
+    image: ${COMMENT_IMAGE}
+    hostname: approve.comment
     ports:
-      - ${COMMENT_PORT}:3234
+      - "${COMMENT_PORT}:3234"
     environment:
       COMMENTS_PORT: ${COMMENT_PORT}
-      COMMENTS_HOST:
+      COMMENTS_HOST: ""
       MONGO_PORT: ${MONGO_PORT}
       MONGO_HOST: ${MONGO_URL}
       MONGO_USERNAME: ${APPROVE_MONGO_USER}
@@ -250,24 +362,41 @@ services:
       MONGO_AUTH: "true"
       REGISTER_WITH_EUREKA: "true"
       EUREKA_HOST: ${EUREKA_URL}
-      EUREKA_SERVICE_NAME: "COMMENTS-SERVICE"
+      EUREKA_SERVICE_NAME: COMMENTS-SERVICE
       CHECK_TOKEN_URL: ${APPROVE_KEYCLOAK_URL}/realms/${KEYCLOAK_REALM_NAME}/protocol/openid-connect/userinfo
       IS_LOCAL: "false"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3234/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      mongo:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
     networks:
       - approve_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  #--------------------------------------------------------------------------------
+  # EMAIL SERVICE (Go-based microservice)
+  #--------------------------------------------------------------------------------
   mail-service:
-    #-------------------------------------------------------------------------------------
-    # ==== Mainly CRUD service in golang for emails and templates ====
-    #-------------------------------------------------------------------------------------
-    restart: always
-    image: ${EMAIL_IMAGE}
+    restart: unless-stopped
     container_name: approve.mails
+    image: ${EMAIL_IMAGE}
+    hostname: approve.mails
     ports:
-      - ${EMAIL_PORT}:4234
+      - "${EMAIL_PORT}:4234"
     environment:
       MAILS_PORT: ${EMAIL_PORT}
-      MAILS_HOST:
+      MAILS_HOST: ""
       MONGO_PORT: ${MONGO_PORT}
       MONGO_HOST: ${MONGO_URL}
       MONGO_USERNAME: ${APPROVE_MONGO_USER}
@@ -275,25 +404,42 @@ services:
       MONGO_AUTH: "true"
       REGISTER_WITH_EUREKA: "true"
       EUREKA_HOST: ${EUREKA_URL}
-      EUREKA_SERVICE_NAME: "MAIL-SERVICE"
+      EUREKA_SERVICE_NAME: MAIL-SERVICE
       CHECK_TOKEN_URL: ${APPROVE_KEYCLOAK_URL}/realms/${KEYCLOAK_REALM_NAME}/protocol/openid-connect/userinfo
       IS_LOCAL: "false"
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:4234/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      mongo:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
     networks:
       - approve_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  #--------------------------------------------------------------------------------
+  # AUTOMATION SERVICE (Go-based microservice)
+  #--------------------------------------------------------------------------------
   automation-service:
-    #-------------------------------------------------------------------------------------
-    # ==== Mainly CRUD service in golang for project based automation ====
-    #-------------------------------------------------------------------------------------
-    restart: always
+    restart: unless-stopped
     container_name: approve.automation
-    image: ${AUTOMATIOM_IMAGE}
+    image: ${AUTOMATION_IMAGE}
+    hostname: approve.automation
     ports:
-      - ${AUTOMATION_PORT}:3233
+      - "${AUTOMATION_PORT}:3233"
     environment:
       RULES_PORT: ${AUTOMATION_PORT}
-      RULES_HOST:
+      RULES_HOST: ""
       MONGO_PORT: ${MONGO_PORT}
       MONGO_HOST: ${MONGO_URL}
       MONGO_USERNAME: ${APPROVE_MONGO_USER}
@@ -301,19 +447,39 @@ services:
       MONGO_AUTH: "true"
       REGISTER_WITH_EUREKA: "true"
       EUREKA_HOST: ${EUREKA_URL}
-      EUREKA_SERVICE_NAME: "AUTOMATION-SERVICE"
-      EUREKA_IP_ADDRESS_FOR_SERVICE: "AUTOMATION-SERVICE"
+      EUREKA_SERVICE_NAME: AUTOMATION-SERVICE
+      EUREKA_IP_ADDRESS_FOR_SERVICE: AUTOMATION-SERVICE
       CHECK_TOKEN_URL: ${APPROVE_KEYCLOAK_URL}/realms/${KEYCLOAK_REALM_NAME}/protocol/openid-connect/userinfo
       IS_LOCAL: "false"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3233/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      mongo:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
     networks:
       - approve_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  #--------------------------------------------------------------------------------
+  # IMPORT SERVICE
+  #--------------------------------------------------------------------------------
   import-service:
-    restart: always
+    restart: unless-stopped
     container_name: approve.import
     image: ${IMPORT_IMAGE}
+    hostname: approve.import
     ports:
-      - ${IMPORT_PORT}:8003
+      - "${IMPORT_PORT}:8003"
     environment:
       APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
       APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
@@ -331,44 +497,59 @@ services:
       EUREKA_PORT: ${EUREKA_PORT}
       CONFIG_URL: ${CONFIG_CONTAINER_URL}
       CONFIG_PORT: ${CONFIG_PORT}
-      JAVA_OPTS: "-XX:+UseSerialGC -XX:MaxRAM=1024m"
+      JAVA_OPTS: ${JAVA_OPTS_BACKEND}
       DB_NAME: ${APPROVE_PROJECT_DB}
+      FRONTEND_URL: ${APPROVE_FRONTEND_URL}
       SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_CONTAINER_URL}/${APPROVE_PROJECT_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8003/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
     networks:
       - approve_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  draft-service:
-    restart: always
-    container_name: approve.draft
-    image: ${DRAFT_IMAGE}
+  #--------------------------------------------------------------------------------
+  # MANUAL SERVICE (Documentation)
+  #--------------------------------------------------------------------------------
+  manual-service:
+    restart: unless-stopped
+    container_name: approve.manual
+    image: ${MANUAL_IMAGE}
+    hostname: approve.manual
     ports:
-      - ${DRAFT_PORT}:8002
-    environment:
-      APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
-      APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
-      APPROVE_CLIENT_ID: ${APPROVE_CLIENT_ID}
-      APPROVE_EUREKA: ${EUREKA_URL}
-      EUREKA_PREFER_IP_ADDRESS: "true"
-      EUREKA_IP_ADDRESS: approve.draft
-      INSTANCE_HOSTNAME: DRAFT-SERVICE
-      INSTANCE_PORT: "8002"
-      POSTGRES_USER: ${APPROVE_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
-      POSTGRES_URL: ${POSTGRES_CONTAINER_URL}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      EUREKA_URL: ${EUREKA_CONTAINER_URL}
-      EUREKA_PORT: ${EUREKA_PORT}
-      CONFIG_URL: ${CONFIG_CONTAINER_URL}
-      CONFIG_PORT: ${CONFIG_PORT}
-      JAVA_OPTS: "-XX:+UseSerialGC -XX:MaxRAM=1024m"
-      DB_NAME: ${APPROVE_PROJECT_DB}
+      - "${MANUAL_PORT}:443"
     networks:
       - approve_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+#==================================================================================
+# NETWORKS
+#==================================================================================
 networks:
   approve_network:
     external: true
 
+#==================================================================================
+# VOLUMES
+#==================================================================================
 volumes:
   postgres_data:
+    driver: local
   mongo_data:
+    driver: local
