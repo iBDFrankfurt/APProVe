@@ -300,7 +300,7 @@ server {
 
     # Manual Service
     location /manual/ {
-        proxy_pass http://127.0.0.1:${MANUAL_PORT}/manual/;
+        proxy_pass http://127.0.0.1:${MANUAL_PORT}/;
 
         proxy_set_header Host \$http_host;
         proxy_set_header X-Real-IP \$remote_addr;
