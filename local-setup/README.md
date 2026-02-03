@@ -700,19 +700,3 @@ If you encounter issues not covered in this guide:
 4. Contact system administrator
 
 ---
-
-## 📝 Changelog
-
-### Version 4.0.0 (2026-01-29)
-- ✨ Added comprehensive health checks
-- ✨ Improved error handling in installation script
-- ✨ Enhanced logging with color-coded output
-- ✨ Better resource limit configuration
-- ✨ Automated dependency management
-- 📚 Significantly expanded documentation
-- 🐛 Fixed Windows line ending issues
-- 🔧 Optimized service startup order
-
----
-
-**Happy coding! 🚀**

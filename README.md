@@ -1,14 +1,13 @@
 <div align="center">
   <h1>APProVe <sup>by iBDF</sup></h1>
+  <strong>Version 4.0.0</strong>
 </div>
 
-APProVe is a software developed by the Interdisciplinary Biomaterials and Database Frankfurt (iBDF) for the convenient management of biosamples and clinical data in research projects. It provides researchers and iBDF employees with a clear means of handling and tracking project requests to the biobank, mapping the entire process from application submission to sample distribution and project completion.
+APProVe (Application Project Proposal Management Software) is a microservice-based ecosystem developed by the
+Interdisciplinary Biomaterials and Database Frankfurt (iBDF). It provides a digital workflow for managing biosample
+requests and clinical data, tracking the entire lifecycle from application submission to sample distribution.
 
 [[_TOC_]]
-
-<div align="center">
-  <h4>A Project Proposal Management Software for Biobanks</h4>
-</div>
 
 <p align="center">
   <a href="#">
@@ -17,117 +16,105 @@ APProVe is a software developed by the Interdisciplinary Biomaterials and Databa
 </p>
 
 ## System Requirements
-- RAM: 6GB
-- Multi-core processor (e.g., Intel i5)
-- Hard disk space: 500 MB
 
-## Features
-APProVe is the first software to digitally and transparently map the application process and further follow-up of projects for all parties involved. The following functions have been integrated:
+The full APProVe ecosystem runs as a suite of microservices.
 
-1. Online submission of project applications
-2. User-related access/view of projects
-3. Overview of all projects in which a user is involved
-4. Tracking of the current project status
-5. Email notification of project changes, project status, or new comments
-6. Project-related communication via the comment function
-7. Assignment of project-related to-dos for biobank members
-8. Tabular summary of projects in tiles based on various criteria for a better overview
+- **RAM:** 6 GB minimum (**16 GB recommended** for full stack performance)
+- **CPU:** 4-8 cores (Intel i5/i7 or equivalent)
+- **Disk Space:** 10 GB+ (SSD recommended)
+- **Architecture:** Docker-ready (Linux, macOS, or Windows via WSL2/Git Bash)
 
-## Changelogs and Documentation
-Each instance has its own Manual Service, containing useful information about managing and using APProVe, as well as the changelogs. If you don't have access to a running Manual Service, you can check the latest changelogs and documentation at: [Manual-Develop](https://backend.approved.ibdf-frankfurt.de/manual/updates/).
+## Architecture & Services
 
-Please note that a few versions may be unreleased or still in testing and will be made public later.
+APProVe is built on a distributed microservice architecture. The **Project Service** (Backend) acts as the central hub
+for project-related logic.
 
-## APProVe Installation
-You can choose to install APProVe for testing purposes on a computer. For local installation, refer to this guide: [Local Setup](https://gitlab.ibdf-frankfurt.de/uct/open-approve/-/tree/master/complete-local-setup?ref_type=heads). If you want to install APProVe on a server environment with reverse proxying, use this guide instead: [Server Setup](https://gitlab.ibdf-frankfurt.de/uct/open-approve/-/tree/master/server-setup?ref_type=heads).
+### Core Service Landscape
 
-Further improvements will be based on feedback.
+| Service                    | Tech Stack             | Purpose                                     |
+|:---------------------------|:-----------------------|:--------------------------------------------|
+| **uct-project-service**    | Spring Boot 3          | Central API / Project management hub        |
+| **uct-frontend-service**   | Spring Boot 3 / Vue.js | UI Delivery and Backend-for-Frontend (BFF)  |
+| **uct-config-service**     | Spring Boot 3          | Centralized configuration management        |
+| **uct-eureka-service**     | Spring Boot 3          | Service discovery and registration          |
+| **uct-auth (Keycloak)**    | Quarkus                | Identity and Access Management (OIDC)       |
+| **uct-user-service**       | Spring Boot 3          | User profile and permission management      |
+| **uct-email-service**      | GoLang                 | SMTP handling and template encryption       |
+| **uct-comment-service**    | GoLang                 | High-performance project discussions        |
+| **uct-automation-service** | GoLang                 | Automated status transitions and hooks      |
+| **uct-draft-service**      | Spring Boot 3          | Temporary project storage before submission |
+| **uct-manual-service**     | VuePress               | Integrated user documentation               |
 
-## Upgrade Guide
+### Critical Startup Path
 
-### 3.4 to 3.5
-If you have previously run APProVe in Version 3.4 and want to upgrade to 3.5 you have to check for these breaking changes.
+The ecosystem follows a strict initialization order to ensure service discovery:
 
-#### Mongo upgrade
-Our GoLang Services (email, comment, automation) previously used the MongoDriver Version for MongoDB 4. As this approaches the end of support we chose to directly upgrade our services to be used by the new MongoDB 6 version.
-If you want to upgrade APProVe from 3.4 to 3.5 you have to first download the new images for email-service (1.4.0), comment-service(1.1.0) and automation-service(1.5.0) and leave the MONGO_IMAGE at 4.4.
+1. **Infrastructure:** PostgreSQL, MongoDB, Keycloak
+2. **Registry:** Config Service → Eureka Service
+3. **Core API:** Project Service (Backend)
+4. **Interface:** Frontend Service & Support Microservices
 
-Afterward, increase the version from MONGO_IMAGE=mongo:4.4 to MONGO_IMAGE=mongo:5.0 in the ``.env``-file and run ``docker-compose pull`` again and run ``docker-compose up -d mongo``.
+## Installation Guides
 
-Now update the internal Mongo version with this command:
+Choose the setup that matches your environment:
 
-````shell
-docker exec -ti approve.mongo bash -c "mongo -u mongo_admin -p mongopass --eval \"db.adminCommand( {setFeatureCompatibilityVersion: '5.0' } )\""
-````
+### [Local Setup Guide](../local-setup/README.md)
 
-Now you can change the image version again to MONGO_IMAGE=mongo:6
+For developers and testing. Uses Docker Desktop and local `hosts` file entries to simulate the domain environment.
 
-Again update the internal Mongo version with this command (be careful mongo now uses mongosh)
+### [Server Setup Guide](../server-setup/README.md)
 
-````shell
-docker exec -ti approve.mongo bash -c "mongo -u mongo_admin -p mongopass --eval \"db.adminCommand( {setFeatureCompatibilityVersion: '5.0' } )\""
-````
+For production environments. Includes Nginx Reverse Proxy configuration, SSL termination (Certbot), DNS requirements,
+and automated backup strategies.
 
-docker exec -ti approve.mongo-demo bash -c "mongosh --port 27014 -u mongo_admin -p mongopass --eval \"db.adminCommand( {setFeatureCompatibilityVersion: '6.0' } )\""
+---
 
-Now you can start the new GoLang services with docker-compose up -d
+## Database Management
 
-#### Breaking change in email-service
-email-Service version 1.4.0 introduces password encryption of the mail-server which was previously saved in the database.
-Now every time you restart the email-service it generates an encryption_key to encrypt the password in the database. This means your password can't be decrypted after a restart of the service.
-To persist the changes we introduced a new ``.env``-variable called ``ENCRYPTION_KEY``. When the new email-service starts it will generate one. just check the logs via ``docker logs mail-service`` or create the key via ``openssl rand -hex 32``.
-Now place it in your ``.env``-file like this:
-````yaml
-ENCRYPTION_KEY=1911668690d83b2ded9176039111e15b568217d3e7be215f2a0a1ea5b82f8a27
-````
+APProVe uses a dual-database approach:
 
-Add this line to the ``docker-compose.yml``
+- **PostgreSQL:** Primary storage for Projects, Users, and Keycloak data. Managed via **Flyway migrations** (
+  V1.1__description.sql format).
+- **MongoDB:** Specialized storage for high-frequency data like comments, automation logs, and email history.
 
-``ENCRYPTION_KEY: ${ENCRYPTION_KEY}``
-under mail-service -> environment.
+## Documentation & API
 
-it should look like this:
+- **Swagger UI:** Once the backend is running, explore the API at
+  `http://approve.backend:8000/api/swagger-ui/index.html`.
+- **Manual Service:** Each instance hosts its own documentation. The latest updates are available
+  at [Manual-Develop](https://backend.approved.ibdf-frankfurt.de/manual/updates/).
+- **Internal Wiki:** [iBDF Wiki](https://ibdf-frankfurt.de/wiki/Hauptseite)
 
-````yaml
-  mail-service:
-    #-------------------------------------------------------------------------------------
-    # ==== Mainly CRUD service in golang for emails and templates ====
-    #-------------------------------------------------------------------------------------
-    restart: always
-    image: ${EMAIL_IMAGE}
-    container_name: approve.mails
-    ports:
-      - ${EMAIL_PORT}:4234
-    environment:
-     ...
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
-    networks:
-      - approve_network
+## Legacy Upgrade (3.x to 4.x)
 
-````
+<details>
+<summary>Click for breaking changes (Mongo/Email encryption)</summary>
 
-After these changes you have to reconfigure your mail-service if you already had one in the settings of APProVe.
+### MongoDB Migration
 
+Upgrading to 4.x requires a sequential migration of MongoDB features:
 
+```bash
+# Set compatibility to 5.0
+docker exec -ti approve.mongo bash -c "mongosh -u mongo_admin -p mongopass --eval \"db.adminCommand( {setFeatureCompatibilityVersion: '5.0' } )\""
+# Then repeat for 6.0
+```
 
-## Popular Documentation
-For more information, visit our [iBDF Wiki](https://ibdf-frankfurt.de/wiki/Hauptseite).
+### Email Service Encryption
 
-## Contribution
-[APProVe Architecture](https://backend.demo.ibdf-frankfurt.de/manual/introduction/architecture.html) consists of the following Microservices
-1. [Manual](https://github.com/iBDFrankfurt/APProVe-Manual): Documentation of APProVe
+Starting with v1.4.0, the email service requires a 32-bit hex `ENCRYPTION_KEY` in the `.env` file to protect mail-server
+credentials stored in the database.
+
+```bash
+openssl rand -hex 32
+```
+
+</details>
 
 ## Credits
-This software uses the following open-source packages:
-- [Node.js](https://nodejs.org/)
-- [moment.js](https://momentjs.com/)
-- [jQuery.js](https://jquery.com/)
-- [Bootstrap](https://getbootstrap.com/)
-- [Keycloak](https://www.keycloak.org/about)
 
-For installation guidance, please refer to the following links:
-- [Docker Installation][docker]
-- [Git Installation][git]
+This software uses open-source packages including Spring Boot, Keycloak, GoLang, Flyway, and Vue.js. For full dependency
+details, check individual service `pom.xml` files.
 
-[docker]: <https://docs.docker.com/install>
-[git]: <https://www.atlassian.com/git/tutorials/install-git>
+---
+**Managed by the Interdisciplinary Biomaterials and Database Frankfurt (iBDF).**
