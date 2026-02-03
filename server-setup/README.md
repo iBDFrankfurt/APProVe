@@ -7,6 +7,8 @@
   <p><b>Version 4.0.0</b></p>
 </div>
 
+This guide provides comprehensive instructions for deploying the APProVe microservices ecosystem on a server for production purposes.
+If you want to start quickly head over to [Quickstart](Quickstart.md).
 ---
 
 ## 📋 Table of Contents
