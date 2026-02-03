@@ -15,6 +15,24 @@ requests and clinical data, tracking the entire lifecycle from application submi
   </a>
 </p>
 
+---
+
+## Access & Collaboration
+
+**APProVe is a closed-source software ecosystem.**
+
+The source code for individual microservices and the Docker image registries are **private**. Access is granted only via
+invitation. Our goal is to foster direct collaboration with institutions and research groups interested in implementing
+APProVe.
+
+1. **Invitation Only:** You cannot download the source code or pull the Docker images without being explicitly
+   authorized by the iBDF team.
+2. **Contact Us:** If you are interested in using APProVe at your location or collaborating on the project, please
+   contact us to discuss an invitation and access to the repositories.
+3. **Support:** Once invited, you will receive the necessary credentials to use the installation guides provided below.
+
+**Contact:** TBA
+
 ## System Requirements
 
 The full APProVe ecosystem runs as a suite of microservices.
@@ -31,19 +49,19 @@ for project-related logic.
 
 ### Core Service Landscape
 
-| Service                    | Tech Stack             | Purpose                                     |
-|:---------------------------|:-----------------------|:--------------------------------------------|
-| **uct-project-service**    | Spring Boot 3          | Central API / Project management hub        |
-| **uct-frontend-service**   | Spring Boot 3 / Vue.js | UI Delivery and Backend-for-Frontend (BFF)  |
-| **uct-config-service**     | Spring Boot 3          | Centralized configuration management        |
-| **uct-eureka-service**     | Spring Boot 3          | Service discovery and registration          |
-| **uct-auth (Keycloak)**    | Quarkus                | Identity and Access Management (OIDC)       |
-| **uct-user-service**       | Spring Boot 3          | User profile and permission management      |
-| **uct-email-service**      | GoLang                 | SMTP handling and template encryption       |
-| **uct-comment-service**    | GoLang                 | High-performance project discussions        |
-| **uct-automation-service** | GoLang                 | Automated status transitions and hooks      |
-| **uct-draft-service**      | Spring Boot 3          | Temporary project storage before submission |
-| **uct-manual-service**     | VuePress               | Integrated user documentation               |
+| Service                    | Tech Stack             | Purpose                                          |
+|:---------------------------|:-----------------------|:-------------------------------------------------|
+| **uct-project-service**    | Spring Boot 3          | Central API / Project management hub             |
+| **uct-frontend-service**   | Spring Boot 3 / Vue.js | UI Delivery and Backend-for-Frontend (BFF)       |
+| **uct-config-service**     | Spring Boot 3          | Centralized configuration management             |
+| **uct-eureka-service**     | Spring Boot 3          | Service discovery and registration               |
+| **uct-auth (Keycloak)**    | Quarkus                | Identity and Access Management (OIDC)            |
+| **uct-user-service**       | Spring Boot 3          | User profile and permission management           |
+| **uct-email-service**      | GoLang                 | SMTP handling and template encryption            |
+| **uct-comment-service**    | GoLang                 | Project discussions                              |
+| **uct-automation-service** | GoLang                 | Automated status transitions and project updates |
+| **uct-import-service**     | Spring Boot 3          | API Key Generation and Access                    |
+| **uct-manual-service**     | VuePress               | Integrated user documentation                    |
 
 ### Critical Startup Path
 
