@@ -538,7 +538,7 @@ services:
     image: ${MANUAL_IMAGE}
     hostname: approve.manual${CONTAINER_NAME_SUFFIX}
     ports:
-      - "127.0.0.1:${MANUAL_PORT}:443"
+      - "127.0.0.1:${MANUAL_PORT}:8080"
     networks:
       - approve_network
     logging:

@@ -100,7 +100,7 @@ APProVe uses a dual-database approach:
 - **Swagger UI:** Once the backend is running, explore the API at
   `http://approve.backend:8000/api/swagger-ui/index.html`.
 - **Manual Service:** Each instance hosts its own documentation. The latest updates are available
-  at [Manual-Develop](https://backend.approved.ibdf-frankfurt.de/manual/updates/).
+  at [Manual-Develop](https://backend.demo.ibdf-frankfurt.de/manual/).
 - **Internal Wiki:** [iBDF Wiki](https://ibdf-frankfurt.de/wiki/Hauptseite)
 
 ## Legacy Upgrade (3.x to 4.x)
