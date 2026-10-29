@@ -1,0 +1,6 @@
+# Shell scripts and files they read must keep LF line endings, also when Git
+# for Windows checks them out with core.autocrlf=true (WSL bash fails on CRLF)
+*.sh      text eol=lf
+.env      text eol=lf
+.env.*    text eol=lf
+Makefile  text eol=lf

@@ -73,7 +73,7 @@ services:
     expose:
       - ${POSTGRES_PORT}
     ports:
-      - "${POSTGRES_PORT}:5432"
+      - "${POSTGRES_HOST_PORT}:5432"
     environment:
       POSTGRES_USER: ${APPROVE_POSTGRES_USER}
       POSTGRES_PASSWORD: ${APPROVE_POSTGRES_PASSWORD}
@@ -104,7 +104,7 @@ services:
     image: ${MONGO_IMAGE}
     hostname: approve.mongo
     ports:
-      - "${MONGO_PORT}:27017"
+      - "${MONGO_HOST_PORT}:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${APPROVE_MONGO_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${APPROVE_MONGO_PASSWORD}
@@ -323,7 +323,7 @@ services:
       APPROVE_KEYCLOAK_USER_PASSWORD: ${KEYCLOAK_USER_PASSWORD}
       APPROVE_KEYCLOAK_CLIENTID: ${APPROVE_CLIENT_ID}
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9001/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9001/api/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -501,7 +501,7 @@ services:
       FRONTEND_URL: ${APPROVE_FRONTEND_URL}
       SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_CONTAINER_URL}/${APPROVE_PROJECT_DB}
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8003/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8003/api/v1/actuator/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -527,8 +527,14 @@ services:
     container_name: approve.manual
     image: ${MANUAL_IMAGE}
     hostname: approve.manual
+    # The manual is built for the base path /manual/. On the server nginx strips
+    # that prefix; locally there is no proxy, so serve the site under /manual/.
+    command: >
+      sh -c "mkdir -p /home/node/site
+      && ln -sfn /home/node/app/docs/.vuepress/dist /home/node/site/manual
+      && exec npx serve /home/node/site -l 8080 --symlinks --no-clipboard"
     ports:
-      - "${MANUAL_PORT}:443"
+      - "${MANUAL_PORT}:8080"
     networks:
       - approve_network
     logging:

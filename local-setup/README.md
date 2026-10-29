@@ -1,702 +1,356 @@
-# APProVe - Local Installation Guide
+# APProVe – Local Installation Guide
 
-> **Version:** 4.0.0  
-> **Last Updated:** January 2026
+> **Version:** 4.0.0
+> **Last Updated:** October 2026
 
-This guide provides comprehensive instructions for deploying the APProVe microservices ecosystem locally for development and testing purposes.
-If you want to start quickly head over to [Quickstart](Quickstart.md).
----
+This guide installs the complete APProVe stack (13 Docker containers) on your own computer, for testing and
+development. It is written for people who install APProVe for the first time. If you have done this before, the
+[Quickstart](Quickstart.md) is enough.
 
-## 📋 Table of Contents
-
-- [System Requirements](#-system-requirements)
-- [Prerequisites](#-prerequisites)
-- [Quick Start](#-quick-start)
-- [Detailed Installation](#-detailed-installation)
-- [Post-Installation](#-post-installation)
-- [Service Architecture](#-service-architecture)
-- [Troubleshooting](#-troubleshooting)
-- [Maintenance](#-maintenance)
-- [FAQ](#-faq)
+**Time needed:** about 15 minutes of your time, plus 5–15 minutes of waiting for the first image download.
 
 ---
 
-## 💻 System Requirements
+## Table of Contents
 
-### Minimum Requirements
-- **OS:** Windows 10/11 (with WSL2 or Git Bash), macOS 11+, or Linux (Ubuntu 20.04+/Debian 11+)
-- **RAM:** 6 GB available (8 GB+ recommended for optimal performance)
-- **Disk Space:** 2 GB free space (5 GB recommended)
-- **CPU:** 4 cores recommended
-- **Network:** Access to `gitlab.ibdf-frankfurt.de` (VPN required for remote access)
-
-### Recommended Specifications
-- **RAM:** 16 GB total system memory
-- **Disk:** SSD with 10 GB+ free space
-- **CPU:** 8+ cores for better performance
-- **Network:** Stable internet connection with low latency
+- [Before you start](#before-you-start)
+- [Installation](#installation)
+- [First login](#first-login)
+- [Your first project](#your-first-project)
+- [Everyday use: stop, start, update, reset](#everyday-use-stop-start-update-reset)
+- [What is running](#what-is-running)
+- [Troubleshooting](#troubleshooting)
+- [FAQ](#faq)
 
 ---
 
-## 🔧 Prerequisites
+## Before you start
 
-Install the following tools before proceeding:
+### What you need
 
-### 1. Docker & Docker Compose
+| What | Why | Check with |
+|---|---|---|
+| **Docker Desktop** (Windows/macOS) or Docker Engine + Compose plugin (Linux) | Runs all APProVe services | `docker info` and `docker compose version` |
+| **Git** | Downloads this repository and two small dependencies | `git --version` |
+| **A Bash shell** – on Windows **Git Bash** (comes with [Git for Windows](https://git-scm.com/downloads)) | The installer is a Bash script. CMD and PowerShell do **not** work. | open "Git Bash" from the start menu |
+| **A GitLab account on `gitlab.ibdf-frankfurt.de`** with access to `uct/open-approve` | The APProVe images are in its private registry | log in at https://gitlab.ibdf-frankfurt.de |
+| **8 GB RAM for Docker**, 5 GB free disk | 13 containers incl. 6 Java services | Docker Desktop → Settings → Resources |
+| Maven + JDK 11+ *(optional)* | Builds the Keycloak event listener. If missing, the installer builds it inside a Docker container instead. | `mvn -v` |
 
-**Installation:**
-- **Windows/Mac:** [Docker Desktop](https://www.docker.com/products/docker-desktop)
-- **Linux:**
-  ```bash
-  # Ubuntu/Debian
-  curl -fsSL https://get.docker.com -o get-docker.sh
-  sudo sh get-docker.sh
-  sudo usermod -aG docker $USER
-  ```
+> **Windows:** run every command in this guide in **Git Bash**, not in PowerShell or CMD.
+> On Linux, add your user to the `docker` group (`sudo usermod -aG docker $USER`, then log out and in again).
 
-**Verification:**
-```bash
-docker --version          # Should show Docker version 20.10+
-docker-compose --version  # Should show Compose version 2.0+
-docker info              # Should show Docker daemon running
-```
+### How APProVe is reached
 
-### 2. Git
-
-**Installation:**
-- **Windows:** [Git for Windows](https://git-scm.com/downloads) (includes Git Bash)
-- **Mac:** `brew install git` or [Download](https://git-scm.com/downloads)
-- **Linux:** `sudo apt install git` (Ubuntu/Debian)
-
-**Verification:**
-```bash
-git --version  # Should show Git version 2.20+
-```
-
-### 3. Bash Shell (Windows Only)
-
-**Windows users MUST use one of the following:**
-- **Git Bash** (recommended, included with Git for Windows)
-- **WSL2** (Ubuntu or Debian distribution)
-
-**❌ NOT SUPPORTED:** Windows CMD, PowerShell
+The services talk to each other – and your browser talks to them – via host names like `approve.frontend` or
+`approve.auth`. Your computer only knows these names after you add them to its **hosts file** (step 2). This is
+the most common reason for a failed first installation.
 
 ---
 
-## ⚡ Quick Start
+## Installation
 
-For experienced users who want to get started immediately:
+### Step 1: Get the repository
 
 ```bash
-# 1. Clone and navigate to local-setup directory
-cd local-setup
-
-# 2. Authenticate with registry
-docker login registry.gitlab.ibdf-frankfurt.de
-
-# 3. Run installation script
-chmod +x install_server.sh
-./install_server.sh
-
-# 4. Access APProVe
-# Open: http://approve.frontend:8001
-# Login: approve-admin / approve-password
+git clone https://gitlab.ibdf-frankfurt.de/uct/open-approve.git
+cd open-approve/local-setup
 ```
 
----
+Git asks for your GitLab username and password (or a Personal Access Token, see step 3). All following commands are
+run in this `local-setup` folder.
 
-## 📖 Detailed Installation
+### Step 2: Add the host names to your hosts file
 
-### Step 1: Network Configuration
-
-APProVe uses custom domain names for service communication. Add these entries to your hosts file:
-
-#### Windows
-1. Open Notepad **as Administrator**
-2. Open file: `C:\Windows\System32\drivers\etc\hosts`
-3. Add the following lines at the end:
+Add this **one line** at the end of your hosts file:
 
 ```text
-# APProVe Local Development
-127.0.0.1 approve.backend
-127.0.0.1 approve.auth
-127.0.0.1 approve.user
-127.0.0.1 approve.frontend
-127.0.0.1 approve.comment
-127.0.0.1 approve.mails
-127.0.0.1 approve.automation
-127.0.0.1 approve.import
-127.0.0.1 approve.draft
-127.0.0.1 approve.eureka
-127.0.0.1 approve.postgres
-127.0.0.1 approve.mongo
+127.0.0.1 approve.frontend approve.auth approve.backend approve.user approve.comment approve.mails approve.automation approve.import
 ```
 
-4. Save and close
+- **Windows:** press the Windows key, type `Notepad`, right-click → **Run as administrator**. Then *File → Open*
+  `C:\Windows\System32\drivers\etc\hosts` (set the file filter to "All files"), paste the line, save.
+- **macOS/Linux:** `sudo nano /etc/hosts`, paste the line, save with `Ctrl+O`, `Enter`, `Ctrl+X`.
 
-#### macOS/Linux
+Check it (the address must be `127.0.0.1`):
+
 ```bash
-sudo nano /etc/hosts
-# Add the lines above, then save (Ctrl+O, Enter, Ctrl+X)
+ping -c 1 approve.frontend    # Windows Git Bash: ping -n 1 approve.frontend
 ```
 
-**Verification:**
-```bash
-ping approve.frontend  # Should resolve to 127.0.0.1
-```
+### Step 3: Log in to the image registry
 
----
+The APProVe images are stored in the GitLab registry. Create a **Personal Access Token**:
 
-### Step 2: Docker Registry Authentication
+1. Open https://gitlab.ibdf-frankfurt.de → your avatar → **Edit profile** → **Access tokens** → **Add new token**
+2. Select the scope **`read_registry`** (add `read_repository` if you also want to use it for `git clone`)
+3. Create it and copy the token – GitLab shows it only once
 
-APProVe images are hosted in a private GitLab registry.
+Then log in (username = your GitLab username, password = the token):
 
-**Authenticate:**
 ```bash
 docker login registry.gitlab.ibdf-frankfurt.de
 ```
 
-**When prompted:**
-- **Username:** Your GitLab username
-- **Password/Token:** Your GitLab Personal Access Token (PAT)
+You should see `Login Succeeded`. If you skip this step, the installer asks for it.
 
-**Creating a Personal Access Token:**
-1. Log in to GitLab: https://gitlab.ibdf-frankfurt.de
-2. Go to: User Settings → Access Tokens
-3. Create token with scope: `read_registry`
-4. Copy the token (you won't see it again!)
+### Step 4: Check for port conflicts *(only if you run databases locally)*
 
-**Troubleshooting Authentication:**
-- ❌ "Access Forbidden" → Token lacks `read_registry` scope
-- ❌ "Unauthorized" → Wrong username/token
-- ✅ "Login Succeeded" → You're ready to proceed!
+APProVe publishes its services on these ports of your computer:
+`8000, 8001, 8003, 8080, 8090, 8761, 8888, 9001, 3233, 3234, 4234` and the database ports `5432` (PostgreSQL) and
+`27017` (MongoDB).
 
----
+If you already have **PostgreSQL** or **MongoDB** installed on your computer, their ports are taken. Then open `.env`
+and change the defaults of these two lines (only the number after `:-`):
 
-### Step 3: Project Setup
-
-**Clone or navigate to the repository:**
 ```bash
-cd /path/to/approve/local-setup
+POSTGRES_HOST_PORT=${POSTGRES_HOST_PORT:-15432}
+MONGO_HOST_PORT=${MONGO_HOST_PORT:-27018}
 ```
 
-**Verify directory structure:**
+The installer checks all ports before starting anything and tells you exactly which one is taken, so you can also
+just start with step 5 and come back here if needed.
+
+### Step 5: Run the installer
+
 ```bash
-ls -la
-# You should see:
-# - install_server.sh
-# - docker-compose.yml
-# - .env
-# - README.md
+./install.sh
 ```
+
+If you get `Permission denied`, run `chmod +x install.sh` once.
+
+The script reports every step it completes. What it does:
+
+1. Checks Docker, Docker Compose, Git, curl, free disk space, the hosts file and the registry login
+2. Checks that all required ports are free
+3. Downloads the Keycloak login theme and the Keycloak event listener into this folder and builds the listener
+4. Downloads the Docker images (the slow part on the first run)
+5. Starts PostgreSQL, MongoDB, the config service, Eureka and Keycloak – each one waits until the previous one is ready
+6. Configures Keycloak: realm `local-test` (login valid for 30 minutes), client `APProVe-Web`, service user,
+   event listener
+7. Starts the backend, creates the APProVe admin and checks that it reached the backend
+8. Starts all remaining services and checks that every container is running
+
+At the end you see the URLs and login data. The whole output is also written to `install.log`.
+
+> **Safe to re-run:** if something fails, the script stops with a message that names the problem (and shows the last
+> log lines of the affected service). The containers are kept so you can look at them. Fix the cause and simply run
+> `./install.sh` again – existing data and configuration are kept.
 
 ---
 
-### Step 4: Run Installation
+## First login
 
-**Make the script executable:**
+| | |
+|---|---|
+| **APProVe** | http://approve.frontend:8001 |
+| **User** | `approve-admin` |
+| **Password** | `approve-password` |
+
+1. Open http://approve.frontend:8001 – you see the APProVe welcome page.
+2. Click **Anmelden** (top right or in the text). You are forwarded to the Keycloak login page (`approve.auth:8080`).
+3. Log in with the data above. You are sent back to APProVe and see the dashboard.
+
+The user interface is in German. The `approve-admin` user has the role `APPROVE_ADMIN_ROLE` and can see everything,
+including the **Administration** area.
+
+Other logins:
+
+| What | URL | Login |
+|---|---|---|
+| Keycloak admin console (users, roles) | http://approve.auth:8080/admin | `adminuser` / `adminpass` |
+| User manual | http://localhost:8090/manual/ | – |
+| Eureka (which services are registered) | http://localhost:8761 | – |
+| Service account used by the services | – | `restuser` / `restuser_pass` |
+
+All of these are set in `.env`. They are for local use only – never use them on a server.
+
+---
+
+## Your first project
+
+A short tour to see that everything works. The user manual (http://localhost:8090/manual/) explains every page
+in detail.
+
+1. Click **Neues Projekt +** in the top bar and confirm the realm **UCT** with **Auswählen**. The form opens in a
+   new browser tab.
+2. The form has five steps (left menu). A step turns green when everything required is filled in:
+   - **Allgemeines:** project title, runtime in months, a project leader (type at least 3 letters of a last name,
+     e.g. `User`, and pick *User, Admin*), a main focus (*Schwerpunkt*, e.g. *UCT*), a cost centre and the
+     request type (*Antragsart*, e.g. *Neuantrag*)
+   - **Abstract:** background, objective, prior work and methods – enter `-` in a field you want to leave empty
+   - **Bioproben & Daten:** samples are optional. Under *Patientendaten* tick at least one option
+     (e.g. *Ich nutze bzw. erhebe selbst Daten* → *Eigene Daten*)
+   - **Ethik & Finanzierung:** choose one financing option (e.g. *Projektfinanzierung ist nicht vorhanden*)
+   - **Nutzungsbedingungen:** accept the terms of use
+3. Click **Weiter** to open the summary (*Zusammenfassung und Projekteinreichung*), check it and click
+   **Projekt einreichen**. You are taken to the project page: it has the number `UCT-1-<year>` and the status
+   *eingereicht*.
+4. To edit, click **Bearbeiten** next to a section on the project page (e.g. *Allgemeine Daten*), change a value
+   (e.g. the runtime) and click **Speichern**. You see *Projekt erfolgreich bearbeitet*.
+
+> **Fill in the form in one go.** Entries are lost when you reload the page. A login is valid for 30 minutes
+> (`KEYCLOAK_ACCESS_TOKEN_LIFESPAN` in `.env`); after that, submitting fails with "Request failed with status
+> code 401" – reload the page to log in again.
+
+> **New users:** create them in the Keycloak admin console (realm `local-test` → *Users* → *Add user*, then set a
+> password under *Credentials* and assign roles under *Role mapping*). The event listener copies every user and role
+> change from Keycloak to APProVe automatically.
+
+---
+
+## Everyday use: stop, start, update, reset
+
+Run these commands in the `local-setup` folder.
+
+| I want to … | Command | Data |
+|---|---|---|
+| see what is running | `docker compose ps` | – |
+| stop APProVe (e.g. at the end of the day) | `docker compose stop` | kept |
+| start it again | `docker compose up -d` | kept |
+| restart one service | `docker compose restart backend-service` | kept |
+| follow the logs | `docker compose logs -f backend-service` | – |
+| get newer images | `docker compose pull && docker compose up -d` | kept |
+| remove the containers | `docker compose down` | kept (volumes stay) |
+| **start from scratch** | `docker compose down -v` and then `./install.sh` | **deleted** |
+
+Docker Desktop starts the containers again automatically after a reboot. The services need 1–2 minutes until
+everything is ready; Go services may log connection errors during that time and then recover by themselves.
+
+The service names for these commands are: `auth`, `postgres`, `mongo`, `config-service`, `eureka-service`,
+`backend-service`, `frontend-service`, `user-service`, `comments-service`, `mail-service`, `automation-service`,
+`import-service`, `manual-service`.
+
+If you have `make` installed, `make help` lists shortcuts for the same commands.
+
+---
+
+## What is running
+
+| Service | Container | Port on your computer | Purpose |
+|---|---|---|---|
+| Frontend | `approve.frontend` | 8001 | Web interface (what you open in the browser) |
+| Backend (project service) | `approve.backend` | 8000 | Core logic: projects, users, roles (`/api`) |
+| Keycloak | `approve.auth` | 8080 | Login and user management |
+| User service | `approve.user` | 9001 | User administration via Keycloak |
+| Import service | `approve.import` | 8003 | Import/export of projects, API keys |
+| Comment service | `approve.comment` | 3234 | Project comments (Go) |
+| Mail service | `approve.mails` | 4234 | E-mail templates and sending (Go) |
+| Automation service | `approve.automation` | 3233 | Automation rules (Go) |
+| Manual | `approve.manual` | 8090 | User manual (`/manual/`) |
+| Config service | `approve.config` | 8888 | Central configuration for the Java services |
+| Eureka | `approve.eureka` | 8761 | Service registry |
+| PostgreSQL | `approve.postgres` | `POSTGRES_HOST_PORT` (5432) | Projects, users, Keycloak |
+| MongoDB | `approve.mongo` | `MONGO_HOST_PORT` (27017) | Comments, mails, automation rules |
+
+Start order (the installer takes care of it): PostgreSQL + MongoDB → config service → Eureka → Keycloak → backend →
+all others.
+
+---
+
+## Troubleshooting
+
+First look at what the installer printed – it names the failed step and shows the last log lines of the affected
+service. For a full report run `./diagnose.sh`.
+
+### "These host names do not resolve: …"
+
+The hosts file entry from step 2 is missing or was not saved (on Windows, Notepad must run as administrator).
+Add the line the script prints and run `./install.sh` again.
+
+### "Port 5432 (POSTGRES_HOST_PORT) is already in use"
+
+Another program uses the port – usually a locally installed database or another Docker project. Either stop it, or
+change the port in `.env` (see step 4). For the service ports (8000, 8001, 8080, …) stop the other program; changing
+them also requires changing the matching URLs in `.env`.
+
+### "Pulling the images failed" / "pull access denied" / "unauthorized"
+
+- Log in again: `docker login registry.gitlab.ibdf-frankfurt.de`
+- Your token needs the scope `read_registry`, and your GitLab account needs access to `uct/open-approve`
+- Outside the institute network: connect the VPN
+
+### "The Keycloak event listener could not be built"
+
+Neither a local Maven build nor the Docker build worked. Details are in `install.log`. Usually Docker cannot download
+the `maven` image (network/proxy) – try `docker pull maven:3.9-eclipse-temurin-17`.
+
+### "The admin user was not found in the backend database"
+
+Keycloak did not hand the admin over to the backend. Check that the listener was loaded:
+`docker compose logs auth | grep -i "event listener"` should show `Initializing Event Listener Factory`. If not,
+check that `keycloak-event-listener/target/keycloak-event-listener.jar` exists and run `./install.sh` again.
+
+### "Timeout waiting for …" / a service does not start
+
 ```bash
-chmod +x install_server.sh
+docker compose ps                      # which container is not running / unhealthy?
+docker compose logs --tail=100 <service>
 ```
 
-**Execute the installation:**
+Common causes: Docker has too little memory (Docker Desktop → Settings → Resources → at least 8 GB) or the computer
+was busy. Run `./install.sh` again – it continues where it stopped.
+
+### The browser shows "This site can't be reached"
+
+1. `ping approve.frontend` must answer from `127.0.0.1` (hosts file, step 2)
+2. `docker compose ps` must show `approve.frontend` as running
+3. The frontend needs about a minute after start; reload the page
+
+### After login the page stays empty or shows errors
+
+Open the browser console (F12). If requests to `approve.backend`, `approve.user` etc. fail, those host names are
+missing in the hosts file – the browser calls these services directly.
+
+### `/bin/bash^M: bad interpreter`
+
+The files were checked out with Windows line endings. Run `sed -i 's/\r$//' install.sh` or configure Git with
+`git config --global core.autocrlf input` and clone again.
+
+---
+
+## FAQ
+
+### Can I use this setup in production?
+
+No. It uses fixed passwords, plain HTTP and no backups. For a server use the [server setup](../server-setup).
+
+### How do I connect a database tool?
+
+PostgreSQL: host `localhost`, port `POSTGRES_HOST_PORT` (default 5432), user `postgres_admin`, password
+`postgres_admin_pass`, databases `approve_db` (APProVe) and `auth_db` (Keycloak).
+MongoDB: `mongodb://mongo_admin:mongopass@localhost:27017` (port = `MONGO_HOST_PORT`).
+
+Or directly in the container:
+
 ```bash
-./install_server.sh
-```
-
-**What the script does:**
-1. ✅ Verifies system prerequisites
-2. ✅ Checks Docker daemon status
-3. ✅ Confirms registry authentication
-4. ✅ Clones/updates dependencies (Keycloak themes & SPI)
-5. ✅ Creates Docker network
-6. ✅ Pulls all service images
-7. ✅ Starts infrastructure services (Postgres, MongoDB, Config, Eureka)
-8. ✅ Configures Keycloak (realm, clients, users, roles)
-9. ✅ Starts application services
-10. ✅ Performs health checks
-11. ✅ Displays access information
-
-**Expected Duration:** 5-15 minutes (depending on network speed)
-
-**Progress Indicators:**
-- Green checkmarks (✅) indicate successful steps
-- Yellow warnings (⚠️) are informational (usually safe to ignore)
-- Red errors (❌) require attention
-
----
-
-## 🎯 Post-Installation
-
-### Access URLs
-
-| Service | URL | Purpose |
-|---------|-----|---------|
-| **Frontend (Main App)** | http://approve.frontend:8001 | Primary user interface |
-| **Keycloak (Auth)** | http://approve.auth:8080 | Identity & access management |
-| **Eureka (Registry)** | http://approve.eureka:8761 | Service discovery dashboard |
-| **Backend API** | http://approve.backend:8000 | REST API endpoint |
-| **Documentation** | http://localhost:443 | User manual |
-
-### Default Credentials
-
-**Application Admin:**
-- Username: `approve-admin`
-- Password: `approve-password`
-- Email: `admin@mail.de`
-
-**Keycloak Admin:**
-- Username: `adminuser`
-- Password: `adminpass`
-- Console: http://approve.auth:8080/admin
-
-**Service Account:**
-- Username: `restuser`
-- Password: `restuser_pass`
-
-> ⚠️ **Security Note:** Change these passwords before deploying to production!
-
-### First Login
-
-1. Open http://approve.frontend:8001
-2. Click "Login"
-3. Enter credentials: `approve-admin` / `approve-password`
-4. You may be prompted to:
-    - Update your profile
-    - Change your password
-    - Accept terms & conditions
-
----
-
-## 🏗️ Service Architecture
-
-### Infrastructure Layer
-```
-┌─────────────┐  ┌──────────┐  ┌──────────┐
-│ PostgreSQL  │  │ MongoDB  │  │ Keycloak │
-│  (Port:     │  │ (Port:   │  │ (Port:   │
-│   5432)     │  │  27017)  │  │  8080)   │
-└─────────────┘  └──────────┘  └──────────┘
-```
-
-### Service Discovery & Configuration
-```
-┌───────────────┐  ┌─────────────────┐
-│ Config Server │  │ Eureka Registry │
-│ (Port: 8888)  │  │ (Port: 8761)    │
-└───────────────┘  └─────────────────┘
-```
-
-### Application Services
-```
-┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
-│ Backend  │  │ Frontend │  │   User   │  │ Comments │
-│ (8000)   │  │ (8001)   │  │  (9001)  │  │ (3234)   │
-└──────────┘  └──────────┘  └──────────┘  └──────────┘
-
-┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
-│  Email   │  │Automation│  │  Draft   │  │  Import  │
-│ (4234)   │  │ (3233)   │  │ (8002)   │  │ (8003)   │
-└──────────┘  └──────────┘  └──────────┘  └──────────┘
-```
-
-### Service Dependencies
-
-**Critical Path (Sequential):**
-1. PostgreSQL → Keycloak
-2. Keycloak → Config Service
-3. Config Service → Eureka
-4. Eureka → Backend Service
-5. Backend Service → Frontend
-
-**Parallel Services (After Backend):**
-- User Service
-- Comments Service (requires MongoDB)
-- Email Service (requires MongoDB)
-- Automation Service (requires MongoDB)
-- Draft Service
-- Import Service
-
----
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-#### 1. "Docker is not running"
-**Symptoms:**
-```
-❌ Error: Docker is not running. Please start Docker Desktop/Daemon.
-```
-
-**Solution:**
-- **Windows/Mac:** Launch Docker Desktop, wait for whale icon to be green
-- **Linux:** `sudo systemctl start docker`
-- Verify: `docker info`
-
----
-
-#### 2. "Access Forbidden" During Image Pull
-**Symptoms:**
-```
-Error response from daemon: pull access denied for registry.gitlab.ibdf-frankfurt.de/...
-```
-
-**Solutions:**
-1. Re-authenticate: `docker login registry.gitlab.ibdf-frankfurt.de`
-2. Verify token has `read_registry` scope
-3. Check GitLab account has access to the projects
-4. Ensure VPN is connected (if remote)
-
----
-
-#### 3. Service Won't Start / Health Check Fails
-**Symptoms:**
-```
-❌ Timeout waiting for backend-service.
-```
-
-**Diagnosis:**
-```bash
-# Check service logs
-docker logs approve.backend
-
-# Check service status
-docker-compose ps
-
-# Check container health
-docker inspect approve.backend | grep -A 10 "Health"
-```
-
-**Common Causes:**
-- **Port conflicts:** Another service using the same port
-- **Memory exhaustion:** Increase Docker memory limit (Docker Desktop → Settings → Resources)
-- **Database not ready:** Check postgres/mongo logs
-- **Network issues:** Verify `approve_network` exists
-
-**Solutions:**
-```bash
-# Restart specific service
-docker-compose restart backend-service
-
-# View real-time logs
-docker-compose logs -f backend-service
-
-# Reset everything (nuclear option)
-docker-compose down -v
-docker network prune
-./install_server.sh
-```
-
----
-
-#### 4. Keycloak Configuration Fails
-**Symptoms:**
-```
-❌ Failed to authenticate with Keycloak.
-```
-
-**Solutions:**
-1. Wait longer (Keycloak takes 2-3 minutes to fully start)
-2. Check Keycloak logs: `docker logs approve.auth`
-3. Verify database connection:
-   ```bash
-   docker exec -it approve.postgres psql -U postgres_admin -d auth_db -c "\dt"
-   ```
-4. Manual verification:
-    - Open http://approve.auth:8080
-    - Should show Keycloak landing page
-
----
-
-#### 5. "Cannot Connect to Frontend"
-**Symptoms:**
-- Browser shows "This site can't be reached"
-- http://approve.frontend:8001 doesn't load
-
-**Checklist:**
-1. ✅ Hosts file configured correctly?
-   ```bash
-   ping approve.frontend  # Should resolve to 127.0.0.1
-   ```
-2. ✅ Frontend service running?
-   ```bash
-   docker ps | grep approve.frontend
-   ```
-3. ✅ Port 8001 available?
-   ```bash
-   # Windows
-   netstat -ano | findstr :8001
-   # Linux/Mac
-   lsof -i :8001
-   ```
-4. ✅ Service healthy?
-   ```bash
-   curl http://localhost:8001/actuator/health
-   ```
-
----
-
-#### 6. Windows Line Ending Issues
-**Symptoms:**
-```
-/bin/bash^M: bad interpreter: No such file or directory
-```
-
-**Solution:**
-```bash
-# Automatic fix (script handles this)
-dos2unix install_server.sh
-
-# Manual fix
-sed -i 's/\r$//' install_server.sh
-```
-
----
-
-### Port Conflicts
-
-If you receive "port already in use" errors:
-
-**Identify conflicting process:**
-```bash
-# Windows
-netstat -ano | findstr :<PORT>
-
-# Linux/Mac
-lsof -i :<PORT>
-```
-
-**Resolution options:**
-1. Stop the conflicting service
-2. Change port in `.env` file
-3. Remove conflicting Docker container
-
----
-
-### Performance Issues
-
-**Symptoms:**
-- Services very slow to start
-- High CPU/memory usage
-- Timeouts during health checks
-
-**Solutions:**
-
-1. **Increase Docker resources:**
-    - Docker Desktop → Settings → Resources
-    - Recommended: 8 GB RAM, 4 CPUs
-
-2. **Free up system resources:**
-   ```bash
-   # Stop unused Docker containers
-   docker stop $(docker ps -aq)
-   
-   # Prune unused resources
-   docker system prune -a
-   ```
-
-3. **Adjust health check timeouts in docker-compose.yml:**
-   ```yaml
-   healthcheck:
-     interval: 60s      # Increase from 30s
-     timeout: 20s       # Increase from 10s
-     start_period: 180s # Increase from 120s
-   ```
-
----
-
-## 🛠️ Maintenance
-
-### Useful Commands
-
-**View service logs:**
-```bash
-# All services
-docker-compose logs -f
-
-# Specific service
-docker-compose logs -f backend-service
-
-# Last 100 lines
-docker-compose logs --tail=100 frontend-service
-```
-
-**Service management:**
-```bash
-# Start all services
-docker-compose up -d
-
-# Stop all services
-docker-compose down
-
-# Restart specific service
-docker-compose restart backend-service
-
-# View service status
-docker-compose ps
-
-# View resource usage
-docker stats
-```
-
-**Database access:**
-```bash
-# PostgreSQL
 docker exec -it approve.postgres psql -U postgres_admin -d approve_db
-
-# MongoDB
 docker exec -it approve.mongo mongosh -u mongo_admin -p mongopass
 ```
 
-**Clean slate (reset everything):**
+### How do I back up and restore the data?
+
 ```bash
-# Stop and remove containers, networks, volumes
-docker-compose down -v
-
-# Remove network
-docker network rm approve_network
-
-# Prune all unused resources
-docker system prune -a --volumes
-
-# Reinstall
-./install_server.sh
-```
-
----
-
-### Updating Services
-
-**Pull latest images:**
-```bash
-docker-compose pull
-docker-compose up -d
-```
-
-**Update specific service:**
-```bash
-# Update image tag in .env
-nano .env
-
-# Pull and restart
-docker-compose pull backend-service
-docker-compose up -d backend-service
-```
-
----
-
-### Backup & Restore
-
-**Backup databases:**
-```bash
-# PostgreSQL
+# Backup
 docker exec approve.postgres pg_dump -U postgres_admin approve_db > backup_postgres.sql
-
-# MongoDB
 docker exec approve.mongo mongodump -u mongo_admin -p mongopass --out=/tmp/backup
 docker cp approve.mongo:/tmp/backup ./backup_mongo
-```
 
-**Restore databases:**
-```bash
-# PostgreSQL
+# Restore
 docker exec -i approve.postgres psql -U postgres_admin approve_db < backup_postgres.sql
-
-# MongoDB
 docker cp ./backup_mongo approve.mongo:/tmp/backup
 docker exec approve.mongo mongorestore -u mongo_admin -p mongopass /tmp/backup
 ```
 
----
+### Can I change the ports or passwords?
 
-## ❓ FAQ
-
-### Q: Can I run APProVe in production?
-**A:** This setup is for **local development only**. Production requires:
-- Proper SSL/TLS certificates
-- Hardened security configuration
-- External database services
-- Load balancing
-- Monitoring & logging infrastructure
+Yes, everything is in `.env`. Port changes need the matching URL in `.env` changed as well. Changes to the
+Keycloak or admin settings only take effect on a fresh installation (`docker compose down -v`, then `./install.sh`).
 
 ---
 
-### Q: How do I add a new user?
-**A:**
-1. Go to http://approve.auth:8080/admin
-2. Login with Keycloak admin credentials
-3. Select realm: `local-test`
-4. Users → Add User
-5. Set credentials and assign roles
+## More
 
----
-
-### Q: Can I change the ports?
-**A:** Yes! Edit the `.env` file:
-```bash
-nano .env
-# Change port variables (e.g., FRONTEND_PORT=8001)
-# Restart: docker-compose down && docker-compose up -d
-```
-
----
-
-### Q: How do I enable debug logging?
-**A:** Add to `.env`:
-```bash
-LOG_LEVEL=DEBUG
-SPRING_PROFILES_ACTIVE=debug
-```
-Then restart services: `docker-compose restart`
-
----
-
-### Q: Services keep crashing - what should I do?
-**A:**
-1. Check logs: `docker-compose logs -f <service>`
-2. Verify system requirements (RAM, disk space)
-3. Check for port conflicts
-4. Try a clean reinstall (see Maintenance section)
-5. Review error messages in `install.log`
-
----
-
-### Q: How do I connect from other devices on my network?
-**A:**
-1. Get your local IP: `ipconfig` (Windows) or `ifconfig` (Linux/Mac)
-2. Update `.env` to use your IP instead of `localhost`
-3. Update hosts file on other devices
-4. Ensure firewall allows connections on required ports
-
----
-
-### Q: What if I encounter "x509: certificate signed by unknown authority"?
-**A:** This happens with self-signed certificates. Set:
-```bash
-export GIT_SSL_NO_VERIFY=1
-export DOCKER_TLS_VERIFY=0
-```
-⚠️ **Not recommended for production**
-
----
-
-## 📚 Additional Resources
-
-- **APProVe Documentation:** http://localhost:443 (after installation)
-- **Keycloak Documentation:** https://www.keycloak.org/documentation
-- **Docker Documentation:** https://docs.docker.com
-- **Issue Tracker:** [Your GitLab Issues URL]
-
----
-
-## 🤝 Support
-
-If you encounter issues not covered in this guide:
-
-1. Check `install.log` for detailed error messages
-2. Review service logs: `docker-compose logs`
-3. Consult your team's internal documentation
-4. Contact system administrator
-
----
+- User manual: http://localhost:8090/manual/ (after the installation)
+- Keycloak documentation: https://www.keycloak.org/documentation
+- Docker documentation: https://docs.docker.com

@@ -6,6 +6,12 @@ local-setup/.mongo_data/
 local-setup/.postgres_data/
 minimal-local-setup/.postgres_data/
 
+### Created by local-setup/install.sh and diagnose.sh
+local-setup/install.log
+local-setup/diagnostic_report_*.txt
+local-setup/keycloak-themes/
+local-setup/keycloak-event-listener/
+
 
 ### Intellij ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider

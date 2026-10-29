@@ -1,130 +1,77 @@
-# 🚀 APProVe Quick Start Guide
+# APProVe Quick Start
 
-**Get APProVe running in 5 minutes!**
+For people who have done this before. First installation? Read the [README](README.md) – it explains every step.
 
----
-
-## Prerequisites Checklist
-
-Before you begin, ensure you have:
-
-- [ ] Docker Desktop installed and running
-- [ ] Git installed
-- [ ] Bash terminal (Git Bash on Windows)
-- [ ] 6GB+ RAM available
-- [ ] 2GB+ disk space free
-- [ ] VPN connected (if remote)
+**Windows:** use **Git Bash** for all commands (not PowerShell/CMD).
 
 ---
 
-## Step 1: Hosts File (1 minute)
+## Checklist
 
-Copy-paste this into your hosts file:
+- [ ] Docker Desktop is running (8 GB RAM for Docker)
+- [ ] Git + Bash (Git Bash on Windows)
+- [ ] GitLab account with access to `uct/open-approve`, VPN connected if outside the institute
+- [ ] 5 GB free disk space
 
-**Windows:** `C:\Windows\System32\drivers\etc\hosts` (open Notepad as Admin)  
-**Mac/Linux:** `/etc/hosts` (use `sudo nano /etc/hosts`)
+---
+
+## 1. Hosts file
+
+Add this line to `C:\Windows\System32\drivers\etc\hosts` (Notepad as administrator) or `/etc/hosts` (`sudo`):
 
 ```
-127.0.0.1 approve.backend approve.auth approve.user approve.frontend approve.comment approve.mails approve.automation approve.import approve.draft approve.eureka approve.postgres approve.mongo
+127.0.0.1 approve.frontend approve.auth approve.backend approve.user approve.comment approve.mails approve.automation approve.import
 ```
 
----
+## 2. Registry login
 
-## Step 2: Docker Login (1 minute)
+Personal Access Token with scope `read_registry`:
 
 ```bash
 docker login registry.gitlab.ibdf-frankfurt.de
 ```
 
-Enter your GitLab username and Personal Access Token (needs `read_registry` scope).
-
----
-
-## Step 3: Installation (3-10 minutes)
+## 3. Install
 
 ```bash
-cd local-setup
-chmod +x install_server.sh
-./install_server.sh
+git clone https://gitlab.ibdf-frankfurt.de/uct/open-approve.git
+cd open-approve/local-setup
+./install.sh
 ```
 
-The script will:
-- ✅ Check prerequisites
-- ✅ Pull Docker images (this is the slowest part)
-- ✅ Start services
-- ✅ Configure Keycloak
-- ✅ Run health checks
+Local PostgreSQL/MongoDB already running? Change `POSTGRES_HOST_PORT` / `MONGO_HOST_PORT` in `.env` first
+(e.g. `15432` / `27018`). The installer checks ports, hosts file and registry login and tells you what to fix.
+It is safe to run it again after an error.
 
-**Coffee break recommended ☕** - First run takes longer due to image downloads.
+## 4. Open APProVe
 
----
+**http://approve.frontend:8001** → *Anmelden* → `approve-admin` / `approve-password`
 
-## Step 4: Access APProVe
-
-Open your browser and navigate to:
-
-**🌐 http://approve.frontend:8001**
-
-**Login Credentials:**
-- Username: `approve-admin`
-- Password: `approve-password`
+| | |
+|---|---|
+| Manual | http://localhost:8090/manual/ |
+| Keycloak admin | http://approve.auth:8080/admin (`adminuser` / `adminpass`) |
+| Eureka | http://localhost:8761 |
 
 ---
 
-## That's It! 🎉
-
-You're now running APProVe locally!
-
----
-
-## Quick Commands
+## Commands (in `local-setup`)
 
 ```bash
-# View logs
-docker-compose logs -f
-
-# Restart a service
-docker-compose restart backend-service
-
-# Stop everything
-docker-compose down
-
-# Check service status
-docker-compose ps
+docker compose ps                   # status
+docker compose logs -f <service>    # logs, e.g. backend-service
+docker compose stop                 # stop, data is kept
+docker compose up -d                # start again
+docker compose down -v && ./install.sh   # start from scratch (deletes all data)
 ```
 
----
+## Common problems
 
-## Common Issues & Quick Fixes
+| Message | Fix |
+|---|---|
+| `These host names do not resolve` | Hosts file line missing (step 1) |
+| `Port … is already in use` | Stop the other program or change the port in `.env` |
+| `Pulling the images failed` | `docker login …` again, token needs `read_registry`, VPN |
+| `Timeout waiting for …` | `docker compose logs <service>`, give Docker more memory, re-run `./install.sh` |
 
-### ❌ "Docker is not running"
-**Fix:** Start Docker Desktop, wait for green status
-
-### ❌ "Access Forbidden" during pull
-**Fix:** Re-run `docker login registry.gitlab.ibdf-frankfurt.de`
-
-### ❌ "Can't reach approve.frontend:8001"
-**Fix:** Check hosts file configuration (Step 1)
-
-### ❌ Service won't start
-**Fix:** Check logs: `docker logs approve.<service-name>`
-
----
-
-## Need Help?
-
-See the full [README.md](README.md) for detailed troubleshooting.
-
----
-
-## Useful URLs
-
-| Service | URL |
-|---------|-----|
-| Frontend | http://approve.frontend:8001 |
-| Keycloak | http://approve.auth:8080 |
-| Eureka | http://approve.eureka:8761 |
-
----
-
-**Happy coding! 🚀**
+More in the [README](README.md#troubleshooting).

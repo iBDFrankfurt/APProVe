@@ -20,21 +20,21 @@ REPORT_FILE="diagnostic_report_$(date +%Y%m%d_%H%M%S).txt"
 # Helper Functions
 #----------------------------------------------------------------------------------
 log_section() {
-    echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}" | tee -a "$REPORT_FILE"
+    echo -e "\n${BLUE}====================================================${NC}" | tee -a "$REPORT_FILE"
     echo -e "${BLUE}$1${NC}" | tee -a "$REPORT_FILE"
-    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n" | tee -a "$REPORT_FILE"
+    echo -e "${BLUE}====================================================${NC}\n" | tee -a "$REPORT_FILE"
 }
 
 check_pass() {
-    echo -e "${GREEN}✓ $1${NC}" | tee -a "$REPORT_FILE"
+    echo -e "${GREEN}[OK]   $1${NC}" | tee -a "$REPORT_FILE"
 }
 
 check_fail() {
-    echo -e "${RED}✗ $1${NC}" | tee -a "$REPORT_FILE"
+    echo -e "${RED}[FAIL] $1${NC}" | tee -a "$REPORT_FILE"
 }
 
 check_warn() {
-    echo -e "${YELLOW}⚠ $1${NC}" | tee -a "$REPORT_FILE"
+    echo -e "${YELLOW}[WARN] $1${NC}" | tee -a "$REPORT_FILE"
 }
 
 #----------------------------------------------------------------------------------
@@ -161,10 +161,6 @@ REQUIRED_HOSTS=(
     "approve.mails"
     "approve.automation"
     "approve.import"
-    "approve.draft"
-    "approve.eureka"
-    "approve.postgres"
-    "approve.mongo"
 )
 
 HOSTS_FILE="/etc/hosts"
@@ -243,7 +239,7 @@ check_service() {
 
 check_service "Frontend" "http://localhost:8001/actuator/health"
 check_service "Backend" "http://localhost:8000/api/actuator/health"
-check_service "Keycloak" "http://localhost:8080/health"
+check_service "Keycloak" "http://localhost:8080/health/live"
 check_service "Eureka" "http://localhost:8761/actuator/health"
 
 echo "" | tee -a "$REPORT_FILE"
@@ -253,26 +249,17 @@ echo "" | tee -a "$REPORT_FILE"
 #----------------------------------------------------------------------------------
 log_section "9. Port Availability Check"
 
-REQUIRED_PORTS=(5432 27017 8080 8888 8761 8000 8001 9001 3234 4234 3233 8002 8003)
+REQUIRED_PORTS=(8080 8888 8761 8000 8001 9001 3234 4234 3233 8003 8090)
 
 echo "Checking if required ports are in use:" | tee -a "$REPORT_FILE"
 echo "" | tee -a "$REPORT_FILE"
 
+# Connect test instead of netstat/lsof: works the same on Linux, macOS and Git Bash
 for port in "${REQUIRED_PORTS[@]}"; do
-    if command -v netstat &> /dev/null; then
-        if netstat -tuln 2>/dev/null | grep -q ":$port "; then
-            check_pass "Port $port is in use (expected)"
-        else
-            check_warn "Port $port is NOT in use"
-        fi
-    elif command -v lsof &> /dev/null; then
-        if lsof -i ":$port" &> /dev/null; then
-            check_pass "Port $port is in use (expected)"
-        else
-            check_warn "Port $port is NOT in use"
-        fi
+    if (exec 3<>"/dev/tcp/127.0.0.1/${port}") 2>/dev/null; then
+        check_pass "Port $port is in use (expected)"
     else
-        echo "Cannot check port $port (no netstat/lsof)" | tee -a "$REPORT_FILE"
+        check_warn "Port $port is NOT in use"
     fi
 done
 
@@ -354,11 +341,11 @@ echo "Report saved to: $REPORT_FILE" | tee -a "$REPORT_FILE"
 echo "" | tee -a "$REPORT_FILE"
 
 # Count issues
-FAIL_COUNT=$(grep -c "✗" "$REPORT_FILE" || true)
-WARN_COUNT=$(grep -c "⚠" "$REPORT_FILE" || true)
+FAIL_COUNT=$(grep -cF "[FAIL]" "$REPORT_FILE" || true)
+WARN_COUNT=$(grep -cF "[WARN]" "$REPORT_FILE" || true)
 
 if [ "$FAIL_COUNT" -eq 0 ] && [ "$WARN_COUNT" -eq 0 ]; then
-    echo -e "${GREEN}✓ All checks passed! System appears healthy.${NC}" | tee -a "$REPORT_FILE"
+    echo -e "${GREEN}All checks passed! System appears healthy.${NC}" | tee -a "$REPORT_FILE"
 elif [ "$FAIL_COUNT" -gt 0 ]; then
     echo -e "${RED}Found $FAIL_COUNT critical issues that need attention.${NC}" | tee -a "$REPORT_FILE"
 else
