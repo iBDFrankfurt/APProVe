@@ -21,8 +21,9 @@ LOG_FILE="${SCRIPT_DIR}/install.log"
 REGISTRY="registry.gitlab.ibdf-frankfurt.de"
 REQUIRED_MEMORY_GB=6
 REQUIRED_DISK_GB=2
-# Host names the browser and this script use to reach the services
-REQUIRED_HOSTS=(approve.frontend approve.auth approve.backend approve.user approve.comment approve.mails approve.automation approve.import)
+# Host names the browser and this script use to reach the services.
+# *.localhost resolves to 127.0.0.1 without a hosts file entry.
+REQUIRED_HOSTS=(frontend.approve.localhost auth.approve.localhost backend.approve.localhost user.approve.localhost comment.approve.localhost mails.approve.localhost automation.approve.localhost import.approve.localhost)
 MAVEN_IMAGE="maven:3.9-eclipse-temurin-17"
 CURRENT_STEP="startup"
 COMPOSE="docker compose"  # replaced by the detected variant in check_prerequisites
@@ -212,9 +213,10 @@ check_prerequisites() {
 }
 
 #----------------------------------------------------------------------------------
-# HOSTS FILE CHECK
-# The browser and this script reach the services via approve.* host names,
-# which only resolve after they were added to the hosts file.
+# HOST NAME CHECK
+# The browser and this script reach the services via *.approve.localhost.
+# Browsers and curl 7.78+ resolve *.localhost to 127.0.0.1 by themselves, so
+# normally nothing is needed; very old curl versions need a hosts file entry.
 #----------------------------------------------------------------------------------
 check_hosts_file() {
     local missing=()
@@ -237,13 +239,14 @@ check_hosts_file() {
 
     if [ ${#missing[@]} -gt 0 ]; then
         log_error "These host names do not resolve: ${missing[*]}"
-        log_error "Add this line to your hosts file and run the script again:"
+        log_error "Your curl is probably older than 7.78 (curl --version). Update it, or"
+        log_error "add this line to your hosts file and run the script again:"
         log_error "  127.0.0.1 ${REQUIRED_HOSTS[*]}"
         log_info "Windows: C:\\Windows\\System32\\drivers\\etc\\hosts (edit as Administrator)"
         log_info "macOS/Linux: /etc/hosts (sudo)"
         exit 1
     fi
-    log "Hosts file contains all approve.* host names."
+    log "All *.approve.localhost host names resolve."
 }
 
 #----------------------------------------------------------------------------------

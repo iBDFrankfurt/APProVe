@@ -97,12 +97,43 @@ echo "  • Frontend domain: ${FRONTEND_DOMAIN}"
 echo "  • Backend domain:  ${BACKEND_DOMAIN}"
 echo ""
 
+# One set of files per instance: approve-keycloak.conf, or approve-dev-keycloak.conf
+# with CONTAINER_NAME_SUFFIX=-dev, so several instances on one server do not
+# overwrite each other's configuration
+CONF_PREFIX="approve${CONTAINER_NAME_SUFFIX}"
+KEYCLOAK_CONF="${CONF_PREFIX}-keycloak.conf"
+FRONTEND_CONF="${CONF_PREFIX}-frontend.conf"
+BACKEND_CONF="${CONF_PREFIX}-backend.conf"
+
+# Refuse to continue if another enabled site already serves one of the domains:
+# nginx would silently use only one of them
+conflicts=""
+for domain in "$KEYCLOAK_DOMAIN" "$FRONTEND_DOMAIN" "$BACKEND_DOMAIN"; do
+    for file in "$NGINX_ENABLED_DIR"/*; do
+        case "$(basename "$file")" in
+            "$KEYCLOAK_CONF"|"$FRONTEND_CONF"|"$BACKEND_CONF") continue ;;
+        esac
+        if grep -qE "^[[:space:]]*server_name([[:space:]]+[^;#]*)?[[:space:]]${domain//./\\.}([[:space:];]|$)" "$file" 2>/dev/null; then
+            conflicts+="  • ${domain} is already served by ${file}\n"
+        fi
+    done
+done
+if [ -n "$conflicts" ]; then
+    echo -e "${RED}✗ Domain already in use by another nginx site:${NC}"
+    echo -e "$conflicts"
+    echo "Disable that site (remove its link in ${NGINX_ENABLED_DIR}) or use other domains in .env."
+    exit 1
+fi
+echo -e "${GREEN}✓ Domains are not used by another nginx site${NC}"
+echo "  • Configuration files: ${KEYCLOAK_CONF}, ${FRONTEND_CONF}, ${BACKEND_CONF}"
+echo ""
+
 #----------------------------------------------------------------------------------
 # Create Keycloak Nginx Configuration
 #----------------------------------------------------------------------------------
 echo -e "${BLUE}Creating Keycloak nginx configuration...${NC}"
 
-cat > "$NGINX_CONF_DIR/approve-keycloak.conf" << EOF
+cat > "$NGINX_CONF_DIR/$KEYCLOAK_CONF" << EOF
 #==================================================================================
 # APProVe Keycloak Nginx Configuration
 # Generated: $(date)
@@ -157,7 +188,7 @@ echo -e "${GREEN}✓ Keycloak configuration created${NC}"
 #----------------------------------------------------------------------------------
 echo -e "${BLUE}Creating Frontend nginx configuration...${NC}"
 
-cat > "$NGINX_CONF_DIR/approve-frontend.conf" << EOF
+cat > "$NGINX_CONF_DIR/$FRONTEND_CONF" << EOF
 #==================================================================================
 # APProVe Frontend Nginx Configuration
 # Generated: $(date)
@@ -215,7 +246,7 @@ echo -e "${GREEN}✓ Frontend configuration created${NC}"
 #----------------------------------------------------------------------------------
 echo -e "${BLUE}Creating Backend nginx configuration...${NC}"
 
-cat > "$NGINX_CONF_DIR/approve-backend.conf" << EOF
+cat > "$NGINX_CONF_DIR/$BACKEND_CONF" << EOF
 #==================================================================================
 # APProVe Backend Nginx Configuration
 # Generated: $(date)
@@ -333,14 +364,14 @@ echo ""
 echo -e "${BLUE}Enabling nginx configurations...${NC}"
 
 # Remove old symlinks if they exist
-rm -f "$NGINX_ENABLED_DIR/approve-keycloak.conf"
-rm -f "$NGINX_ENABLED_DIR/approve-frontend.conf"
-rm -f "$NGINX_ENABLED_DIR/approve-backend.conf"
+rm -f "$NGINX_ENABLED_DIR/$KEYCLOAK_CONF"
+rm -f "$NGINX_ENABLED_DIR/$FRONTEND_CONF"
+rm -f "$NGINX_ENABLED_DIR/$BACKEND_CONF"
 
 # Create new symlinks
-ln -s "$NGINX_CONF_DIR/approve-keycloak.conf" "$NGINX_ENABLED_DIR/approve-keycloak.conf"
-ln -s "$NGINX_CONF_DIR/approve-frontend.conf" "$NGINX_ENABLED_DIR/approve-frontend.conf"
-ln -s "$NGINX_CONF_DIR/approve-backend.conf" "$NGINX_ENABLED_DIR/approve-backend.conf"
+ln -s "$NGINX_CONF_DIR/$KEYCLOAK_CONF" "$NGINX_ENABLED_DIR/$KEYCLOAK_CONF"
+ln -s "$NGINX_CONF_DIR/$FRONTEND_CONF" "$NGINX_ENABLED_DIR/$FRONTEND_CONF"
+ln -s "$NGINX_CONF_DIR/$BACKEND_CONF" "$NGINX_ENABLED_DIR/$BACKEND_CONF"
 
 echo -e "${GREEN}✓ Configurations enabled${NC}"
 
@@ -373,9 +404,9 @@ echo -e "${GREEN}      Nginx Configuration Complete!                        ${NC
 echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
 echo ""
 echo -e "${YELLOW}Configuration Files Created:${NC}"
-echo "  • ${NGINX_CONF_DIR}/approve-keycloak.conf"
-echo "  • ${NGINX_CONF_DIR}/approve-frontend.conf"
-echo "  • ${NGINX_CONF_DIR}/approve-backend.conf"
+echo "  • ${NGINX_CONF_DIR}/${KEYCLOAK_CONF}"
+echo "  • ${NGINX_CONF_DIR}/${FRONTEND_CONF}"
+echo "  • ${NGINX_CONF_DIR}/${BACKEND_CONF}"
 echo ""
 echo -e "${YELLOW}Domains Configured:${NC}"
 echo "  • Keycloak:  ${KEYCLOAK_DOMAIN}"
@@ -387,7 +418,7 @@ echo "  1. Configure SSL with certbot:"
 echo -e "     ${YELLOW}sudo certbot --nginx${NC}"
 echo ""
 echo "  2. Run the installation script:"
-echo -e "     ${YELLOW}bash install.sh${NC}"
+echo -e "     ${YELLOW}bash install_server.sh${NC}"
 echo ""
 echo -e "${YELLOW}⚠  Note:${NC} Make sure DNS records for all domains point to this server!"
 echo ""

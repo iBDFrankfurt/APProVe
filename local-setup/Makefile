@@ -1,7 +1,7 @@
 # APProVe Local Development Makefile
 # Convenient shortcuts for common operations
 
-.PHONY: help install setup-hosts start stop restart pull update status health logs stats \
+.PHONY: help install start stop restart pull update status health logs stats \
 	db-postgres db-mongo backup backup-postgres backup-mongo urls credentials \
 	clean clean-all prune reset dev network-info ports login test-connectivity
 
@@ -11,7 +11,7 @@ SHELL := /bin/bash
 
 # Same Docker Compose variant as install.sh: plugin first, standalone binary as fallback
 COMPOSE := $(shell docker compose version >/dev/null 2>&1 && echo "docker compose" || echo "docker-compose")
-HOSTS := approve.frontend approve.auth approve.backend approve.user approve.comment approve.mails approve.automation approve.import
+HOSTS := frontend.approve.localhost auth.approve.localhost backend.approve.localhost user.approve.localhost comment.approve.localhost mails.approve.localhost automation.approve.localhost import.approve.localhost
 TIMESTAMP := $(shell date +%Y%m%d_%H%M%S)
 
 # Color output
@@ -33,12 +33,6 @@ install: ## Run full installation script
 	@printf "$(GREEN)Starting APProVe installation...$(NC)\n"
 	@chmod +x install.sh
 	@./install.sh
-
-setup-hosts: ## Display the line to add to your hosts file
-	@printf "$(YELLOW)Add this line to your hosts file:$(NC)\n\n"
-	@printf "127.0.0.1 $(HOSTS)\n\n"
-	@printf "$(YELLOW)Windows:$(NC) C:\\\\Windows\\\\System32\\\\drivers\\\\etc\\\\hosts (edit as Administrator)\n"
-	@printf "$(YELLOW)Linux/Mac:$(NC) /etc/hosts (sudo)\n"
 
 ##@ Service Management
 
@@ -117,18 +111,18 @@ backup-mongo: ## Backup MongoDB database to backups/
 
 urls: ## Display all service URLs
 	@printf "$(YELLOW)Main Application:$(NC)\n"
-	@printf "  APProVe:       http://approve.frontend:8001\n"
+	@printf "  APProVe:       http://frontend.approve.localhost:8001\n"
 	@printf "  Manual:        http://localhost:8090/manual/\n"
 	@printf "$(YELLOW)Administration:$(NC)\n"
-	@printf "  Keycloak:      http://approve.auth:8080/admin\n"
+	@printf "  Keycloak:      http://auth.approve.localhost:8080/admin\n"
 	@printf "  Eureka:        http://localhost:8761\n"
 	@printf "$(YELLOW)API Endpoints:$(NC)\n"
-	@printf "  Backend:       http://approve.backend:8000/api\n"
-	@printf "  User Service:  http://approve.user:9001/api\n"
-	@printf "  Comments:      http://approve.comment:3234\n"
-	@printf "  Email:         http://approve.mails:4234\n"
-	@printf "  Automation:    http://approve.automation:3233\n"
-	@printf "  Import:        http://approve.import:8003\n"
+	@printf "  Backend:       http://backend.approve.localhost:8000/api\n"
+	@printf "  User Service:  http://user.approve.localhost:9001/api\n"
+	@printf "  Comments:      http://comment.approve.localhost:3234\n"
+	@printf "  Email:         http://mails.approve.localhost:4234\n"
+	@printf "  Automation:    http://automation.approve.localhost:3233\n"
+	@printf "  Import:        http://import.approve.localhost:8003\n"
 	@printf "$(YELLOW)Databases (host ports, see .env):$(NC)\n"
 	@printf "  PostgreSQL:    localhost:POSTGRES_HOST_PORT (default 5432)\n"
 	@printf "  MongoDB:       localhost:MONGO_HOST_PORT (default 27017)\n"
@@ -179,8 +173,8 @@ ports: ## Show all published ports
 login: ## Login to GitLab registry
 	@docker login registry.gitlab.ibdf-frankfurt.de
 
-test-connectivity: ## Check that the approve.* host names resolve
+test-connectivity: ## Check that the *.approve.localhost host names resolve
 	@for host in $(HOSTS); do \
 		curl -s -o /dev/null --connect-timeout 3 "http://$$host:1/"; \
-		if [ $$? -ne 6 ]; then printf "$(GREEN)OK  $(NC) $$host\n"; else printf "$(RED)FAIL$(NC) $$host (missing in hosts file)\n"; fi; \
+		if [ $$? -ne 6 ]; then printf "$(GREEN)OK  $(NC) $$host\n"; else printf "$(RED)FAIL$(NC) $$host (does not resolve - curl older than 7.78?)\n"; fi; \
 	done

@@ -113,7 +113,7 @@ Choose the setup that matches your environment:
 
 ### [Local Setup Guide](local-setup/README.md)
 
-For developers and testing. Uses Docker Desktop and local `hosts` file entries to simulate the domain environment.
+For developers and testing. Uses Docker Desktop and `*.approve.localhost` host names, which need no `hosts` file entries.
 
 ### [Server Setup Guide](server-setup/README.md)
 
@@ -133,7 +133,7 @@ APProVe uses a dual-database approach:
 ## Documentation & API
 
 - **Swagger UI:** Once the backend is running, explore the API at
-  `http://approve.backend:8000/api/swagger-ui/index.html`.
+  `http://backend.approve.localhost:8000/api/swagger-ui/index.html`.
 - **Manual Service:** Each instance hosts its own documentation. The latest updates are available
   at [Manual-Develop](https://backend.demo.ibdf-frankfurt.de/manual/).
 - **Internal Wiki:** [iBDF Wiki](https://ibdf-frankfurt.de/wiki/Hauptseite)

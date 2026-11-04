@@ -61,7 +61,8 @@ pull: ## Pull latest images
 	@printf "$(GREEN)Pulling latest images...$(NC)\n"
 	@docker compose pull
 
-update: pull restart ## Pull latest images and restart services
+update: pull ## Pull latest images and recreate the changed services
+	@docker compose up -d
 
 ##@ Monitoring & Diagnostics
 
@@ -87,18 +88,14 @@ backup: ## Run database backup script
 	@chmod +x backup.sh
 	@./backup.sh
 
+# docker compose exec always picks the container of THIS instance (other instances on
+# the same server have containers named approve.postgres-<suffix> too) and the
+# credentials come from the container's own environment
 db-postgres: ## Connect to PostgreSQL database
-	@# Finds the postgres container ID dynamically in case suffix is used
-	@ID=$$(docker ps -q -f "name=approve.postgres"); \
-	if [ -z "$$ID" ]; then echo "$(RED)Postgres not running$(NC)"; else \
-	echo "$(GREEN)Connecting to Postgres ($$ID)...$(NC)"; \
-	docker exec -it $$ID psql -U postgres_admin -d approve_db; fi
+	@docker compose exec postgres sh -c 'psql -U "$$POSTGRES_USER" -d approve_db'
 
 db-mongo: ## Connect to MongoDB database
-	@ID=$$(docker ps -q -f "name=approve.mongo"); \
-	if [ -z "$$ID" ]; then echo "$(RED)Mongo not running$(NC)"; else \
-	echo "$(GREEN)Connecting to Mongo ($$ID)...$(NC)"; \
-	docker exec -it $$ID mongosh -u mongo_admin -p mongopass; fi
+	@docker compose exec mongo sh -c 'mongosh -u "$$MONGO_INITDB_ROOT_USERNAME" -p "$$MONGO_INITDB_ROOT_PASSWORD"'
 
 ##@ Maintenance
 

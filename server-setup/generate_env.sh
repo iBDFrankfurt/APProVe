@@ -187,6 +187,9 @@ echo -e "${BLUE}─── Optional Settings ───${NC}"
 echo ""
 
 prompt_for_variable "CONTAINER_NAME_SUFFIX" "Container Name Suffix (leave empty for single instance)"
+# The databases live in Docker volumes named <project>_postgres_data / <project>_mongo_data.
+# A second instance with the same project name would use the SAME databases.
+prompt_for_variable "COMPOSE_PROJECT_NAME" "Docker Compose project name - must be unique per instance on this server (keep it for an existing installation, otherwise its data is no longer found)"
 
 echo ""
 

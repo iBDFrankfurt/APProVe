@@ -24,9 +24,9 @@ Before you begin, ensure you have:
 # Update system
 sudo apt update && sudo apt upgrade -y
 
-# Install Docker & Compose
+# Install Docker incl. the Compose plugin ("docker compose")
 curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh
-sudo apt install -y docker-compose
+docker compose version
 
 # Install Server Tools
 sudo apt install -y git nginx certbot python3-certbot-nginx make jq
@@ -54,17 +54,14 @@ sudo ufw enable
 ### Step 3: Project Setup (2 minutes)
 
 ```bash
-# Create directory
-mkdir -p ~/approve-server && cd ~/approve-server
-
-# [Action Required] Transfer your setup files here:
-# .env.tmp, docker-compose.yml, Makefile, and all .sh scripts
-
-# Make scripts executable
+# One new, empty folder per instance
+sudo mkdir -p /opt/approve-server && cd /opt/approve-server
+git clone https://gitlab.ibdf-frankfurt.de/uct/open-approve.git   # GitLab user + token (read_repository)
+cd open-approve/server-setup
 chmod +x *.sh
 
-# Login to GitLab Registry
-docker login gitlab.ibdf-frankfurt.de
+# Login to the image registry (token with read_registry)
+docker login registry.gitlab.ibdf-frankfurt.de
 ```
 
 ---
@@ -75,6 +72,8 @@ We will now use the `Makefile` to trigger the interactive configuration.
 
 ```bash
 # 1. Generate your .env file
+#    Second instance on the same server? Use a container suffix (e.g. -dev), a NEW
+#    Compose project name and other ports - see README "multiple instances".
 make env
 
 # 2. Generate Nginx site configs
@@ -158,7 +157,11 @@ make backup
 Run `sudo nginx -t` to see the specific line error. Ensure your `.env` URLs do not contain trailing slashes.
 
 ### ❌ "Timeout waiting for backend-service"
-Check the logs: `make logs-backend`. Usually caused by the server having less than the required 6GB of available RAM.
+Check the logs: `make logs-backend-service`. Usually caused by the server having less than the required 6GB of available RAM.
+
+### ❌ "Domain already in use by another nginx site"
+Another enabled nginx site serves one of your domains (e.g. an older APProVe instance). Remove its link in
+`/etc/nginx/sites-enabled/` or use other domains, then run `make nginx` again. Nothing was changed.
 
 ### ❌ SSL / Connection Refused
 Ensure your firewall is open (`sudo ufw status`) and that Nginx is running (`systemctl status nginx`).

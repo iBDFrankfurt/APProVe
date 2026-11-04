@@ -75,8 +75,9 @@ fi
 
 echo -e "${YELLOW}Backing up Keycloak database (${APPROVE_AUTH_DB})...${NC}"
 AUTH_BACKUP_FILE="${BACKUP_DIR}/postgres_auth_${TIMESTAMP}.sql.gz"
+# No "docker exec -t": a TTY turns every line ending into \r\n and alters multi-line text in the dump
 
-if docker exec -t "$POSTGRES_CONTAINER" pg_dump \
+if docker exec "$POSTGRES_CONTAINER" pg_dump \
     --dbname="$APPROVE_AUTH_DB" \
     --create \
     --clean \
@@ -96,7 +97,7 @@ echo ""
 echo -e "${YELLOW}Backing up APProVe database (${APPROVE_PROJECT_DB})...${NC}"
 PROJECT_BACKUP_FILE="${BACKUP_DIR}/postgres_project_${TIMESTAMP}.sql.gz"
 
-if docker exec -t "$POSTGRES_CONTAINER" pg_dump \
+if docker exec "$POSTGRES_CONTAINER" pg_dump \
     --dbname="$APPROVE_PROJECT_DB" \
     --create \
     --clean \

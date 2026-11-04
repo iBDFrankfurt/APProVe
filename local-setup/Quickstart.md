@@ -12,18 +12,13 @@ For people who have done this before. First installation? Read the [README](READ
 - [ ] Git + Bash (Git Bash on Windows)
 - [ ] GitLab account with access to `uct/open-approve`, VPN connected if outside the institute
 - [ ] 5 GB free disk space
+- [ ] Port 8080 free (often taken by other dev servers)
+
+No hosts file entries needed: all services use `*.approve.localhost`, which browsers and curl resolve by themselves.
 
 ---
 
-## 1. Hosts file
-
-Add this line to `C:\Windows\System32\drivers\etc\hosts` (Notepad as administrator) or `/etc/hosts` (`sudo`):
-
-```
-127.0.0.1 approve.frontend approve.auth approve.backend approve.user approve.comment approve.mails approve.automation approve.import
-```
-
-## 2. Registry login
+## 1. Registry login
 
 Personal Access Token with scope `read_registry`:
 
@@ -31,7 +26,7 @@ Personal Access Token with scope `read_registry`:
 docker login registry.gitlab.ibdf-frankfurt.de
 ```
 
-## 3. Install
+## 2. Install
 
 ```bash
 git clone https://gitlab.ibdf-frankfurt.de/uct/open-approve.git
@@ -40,17 +35,17 @@ cd open-approve/local-setup
 ```
 
 Local PostgreSQL/MongoDB already running? Change `POSTGRES_HOST_PORT` / `MONGO_HOST_PORT` in `.env` first
-(e.g. `15432` / `27018`). The installer checks ports, hosts file and registry login and tells you what to fix.
+(e.g. `15432` / `27018`). The installer checks ports, host names and registry login and tells you what to fix.
 It is safe to run it again after an error.
 
-## 4. Open APProVe
+## 3. Open APProVe
 
-**http://approve.frontend:8001** → *Anmelden* → `approve-admin` / `approve-password`
+**http://frontend.approve.localhost:8001** → *Anmelden* → `approve-admin` / `approve-password`
 
 | | |
 |---|---|
 | Manual | http://localhost:8090/manual/ |
-| Keycloak admin | http://approve.auth:8080/admin (`adminuser` / `adminpass`) |
+| Keycloak admin | http://auth.approve.localhost:8080/admin (`adminuser` / `adminpass`) |
 | Eureka | http://localhost:8761 |
 
 ---
@@ -69,8 +64,8 @@ docker compose down -v && ./install.sh   # start from scratch (deletes all data)
 
 | Message | Fix |
 |---|---|
-| `These host names do not resolve` | Hosts file line missing (step 1) |
-| `Port … is already in use` | Stop the other program or change the port in `.env` |
+| `These host names do not resolve` | curl older than 7.78 – update it (or Git for Windows) |
+| `Port … is already in use` | Stop the other program; only the database ports can be changed in `.env` |
 | `Pulling the images failed` | `docker login …` again, token needs `read_registry`, VPN |
 | `Timeout waiting for …` | `docker compose logs <service>`, give Docker more memory, re-run `./install.sh` |
 

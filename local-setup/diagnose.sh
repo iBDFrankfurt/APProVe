@@ -150,32 +150,28 @@ echo "" | tee -a "$REPORT_FILE"
 #----------------------------------------------------------------------------------
 # Hosts File Configuration
 #----------------------------------------------------------------------------------
-log_section "5. Hosts File Configuration"
+log_section "5. Host Name Resolution"
 
+# *.localhost names resolve to 127.0.0.1 without a hosts file entry
 REQUIRED_HOSTS=(
-    "approve.backend"
-    "approve.auth"
-    "approve.user"
-    "approve.frontend"
-    "approve.comment"
-    "approve.mails"
-    "approve.automation"
-    "approve.import"
+    "backend.approve.localhost"
+    "auth.approve.localhost"
+    "user.approve.localhost"
+    "frontend.approve.localhost"
+    "comment.approve.localhost"
+    "mails.approve.localhost"
+    "automation.approve.localhost"
+    "import.approve.localhost"
 )
 
-HOSTS_FILE="/etc/hosts"
-if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
-    HOSTS_FILE="/c/Windows/System32/drivers/etc/hosts"
-fi
-
-echo "Checking hosts file: $HOSTS_FILE" | tee -a "$REPORT_FILE"
-echo "" | tee -a "$REPORT_FILE"
-
 for host in "${REQUIRED_HOSTS[@]}"; do
-    if grep -q "$host" "$HOSTS_FILE" 2>/dev/null; then
-        check_pass "$host is configured"
+    # curl exit code 6 = host name could not be resolved
+    rc=0
+    curl -s -o /dev/null --connect-timeout 3 "http://${host}:1/" || rc=$?
+    if [ "$rc" -ne 6 ]; then
+        check_pass "$host resolves"
     else
-        check_fail "$host is NOT configured"
+        check_fail "$host does NOT resolve (curl too old? needs 7.78+)"
     fi
 done
 

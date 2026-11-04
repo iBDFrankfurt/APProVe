@@ -8,7 +8,7 @@
 </div>
 
 This guide provides comprehensive instructions for deploying the APProVe microservices ecosystem on a server for production purposes.
-If you want to start quickly head over to [Quickstart](Quickstart.md).
+If you want to start quickly head over to [Quickstart](quickstart.md).
 ---
 
 ## 📋 Table of Contents
@@ -132,15 +132,15 @@ sudo systemctl start docker
 docker --version
 ```
 
-### 3. Install Docker Compose
+### 3. Check Docker Compose
+
+The scripts use the Compose **plugin** (`docker compose`, with a space). The script from step 2 installs it already.
+The old standalone program `docker-compose` (with a hyphen) is not needed.
 
 ```bash
-# Install Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-
-# Verify installation
-docker-compose --version
+docker compose version
+# if missing:
+sudo apt install -y docker-compose-plugin
 ```
 
 ### 4. Install Additional Tools
@@ -203,21 +203,24 @@ All three should return your server's IP address.
 ### Step 1: Download Installation Files
 
 ```bash
-# Create installation directory
-mkdir -p ~/approve-server
-cd ~/approve-server
-
-# Download installation files
-# (Transfer the files from server-setup directory to your server)
+# Use a new, empty folder for every instance (e.g. /opt/approve-server)
+sudo mkdir -p /opt/approve-server && cd /opt/approve-server
+git clone https://gitlab.ibdf-frankfurt.de/uct/open-approve.git
+cd open-approve/server-setup
 ```
 
-**Required files:**
+Git asks for your GitLab username and a Personal Access Token (scope `read_repository`). Do not store these
+credentials on the server permanently. Alternatively copy the `server-setup` folder to the server.
+
+**Files in `server-setup`:**
 - `.env.tmp` - Environment template
 - `docker-compose.yml` - Service definitions
 - `generate_env.sh` - Environment configuration script
 - `generate_nginx_conf.sh` - Nginx configuration generator
-- `install.sh` - Main installation script
+- `install_server.sh` - Main installation script
 - `backup.sh` - Database backup script
+- `diagnostic_server.sh` - Diagnostic report
+- `Makefile` - Shortcuts (`make help`)
 
 ### Step 2: Authenticate with Docker Registry
 
@@ -262,7 +265,16 @@ bash generate_env.sh
     - PostgreSQL username and password
     - MongoDB username and password
 
+5. **Instance:**
+    - Container name suffix (e.g. `-test`; leave empty if this is the only APProVe instance on the server)
+    - Docker Compose project name (default `approve-server`)
+
 **⚠️ Important:** Use strong, unique passwords for all credentials!
+
+**⚠️ One project name per instance:** the databases are stored in the Docker volumes
+`<project name>_postgres_data` and `<project name>_mongo_data`. A second instance with the same project name uses
+the **same databases** as the first one. For an existing installation keep its project name – otherwise its data is
+no longer found.
 
 ### Step 4: Generate Nginx Configuration
 
@@ -272,11 +284,17 @@ sudo bash generate_nginx_conf.sh
 ```
 
 This script will:
-- Create nginx configuration files for all three domains
-- Place them in `/etc/nginx/sites-available/`
+- Stop if one of the three domains is already served by another enabled nginx site (nothing is changed then)
+- Create nginx configuration files for all three domains in `/etc/nginx/sites-available/`:
+  `approve<suffix>-keycloak.conf`, `approve<suffix>-frontend.conf`, `approve<suffix>-backend.conf`
+  (e.g. `approve-test-keycloak.conf` with the suffix `-test`), so several instances do not overwrite each other
 - Enable them in `/etc/nginx/sites-enabled/`
 - Test the nginx configuration
 - Reload nginx
+
+> **Older installations with a suffix** have files named `approve-keycloak.conf` etc. (without suffix). When you run
+> the script again there, it stops with "Domain already in use" – remove the three old links in
+> `/etc/nginx/sites-enabled/` first.
 
 ### Step 5: Configure SSL Certificates
 
@@ -327,7 +345,7 @@ bash install_server.sh
 
 **1. Check all services are running:**
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 All services should show status: `Up` or `Up (healthy)`
@@ -417,12 +435,12 @@ docker exec -i approve.mongo mongorestore \
 
 **Check logs:**
 ```bash
-docker-compose logs -f <service-name>
+docker compose logs -f <service-name>
 
 # Examples:
-docker-compose logs -f backend-service
-docker-compose logs -f auth
-docker-compose logs -f frontend-service
+docker compose logs -f backend-service
+docker compose logs -f auth
+docker compose logs -f frontend-service
 ```
 
 **Common issues:**
@@ -455,13 +473,15 @@ sudo ufw status
 
 ### Keycloak Configuration Issues
 
-**Reset Keycloak configuration:**
-```bash
-# Stop services
-docker-compose down
+**Start from scratch (fresh installation):**
 
-# Remove Keycloak data (WARNING: This deletes all users and settings!)
-docker volume rm approve-server_postgres_data
+> ⚠️ The PostgreSQL volume holds **both** databases: Keycloak (`auth_db`, users and roles) **and** APProVe
+> (`approve_db`, all projects). Removing it deletes all projects as well. Run `bash backup.sh` first. To fix only
+> Keycloak settings, use the Keycloak admin console instead.
+
+```bash
+# Removes the containers AND the volumes of this instance (project name from .env)
+docker compose down -v
 
 # Reinstall
 bash install_server.sh
@@ -483,7 +503,7 @@ free -h
 **Optimize:**
 ```bash
 # Restart services
-docker-compose restart
+docker compose restart
 
 # Prune unused resources
 docker system prune -a
@@ -498,28 +518,28 @@ docker system prune -a
 **Service management:**
 ```bash
 # Start all services
-docker-compose up -d
+docker compose up -d
 
 # Stop all services
-docker-compose down
+docker compose down
 
 # Restart specific service
-docker-compose restart backend-service
+docker compose restart backend-service
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # Check status
-docker-compose ps
+docker compose ps
 ```
 
 **Update services:**
 ```bash
 # Pull latest images
-docker-compose pull
+docker compose pull
 
 # Recreate containers with new images
-docker-compose up -d
+docker compose up -d
 ```
 
 **Database access:**
@@ -592,8 +612,8 @@ sudo apt update && sudo apt upgrade -y
 
 # Update Docker images
 cd ~/approve-server
-docker-compose pull
-docker-compose up -d
+docker compose pull
+docker compose up -d
 ```
 
 **5. Backup Strategy**
@@ -621,16 +641,27 @@ docker-compose up -d
 
 ### Q: Can I run multiple APProVe instances on the same server?
 
-**A:** Yes! Use the `CONTAINER_NAME_SUFFIX` variable in `.env`:
+**A:** Yes. Give every instance its own folder, its own domains and these three settings in `.env`
+(`generate_env.sh` asks for the first two):
+
 ```bash
-# Instance 1
-CONTAINER_NAME_SUFFIX=
-
-# Instance 2
-CONTAINER_NAME_SUFFIX=-dev
-
-# Use different ports for each instance
+# Instance 1                              # Instance 2
+CONTAINER_NAME_SUFFIX=                    CONTAINER_NAME_SUFFIX=-dev
+COMPOSE_PROJECT_NAME=approve-server       COMPOSE_PROJECT_NAME=approve-server-dev
+AUTH_PORT=8093 ... IMPORT_PORT=8013       AUTH_PORT=8095 ... IMPORT_PORT=8017
+POSTGRES_HOST_PORT=5432                   POSTGRES_HOST_PORT=15432
+MONGO_HOST_PORT=27017                     MONGO_HOST_PORT=27018
 ```
+
+Do **not** change `POSTGRES_PORT` / `MONGO_PORT` – they are the ports inside the Docker network.
+
+- `CONTAINER_NAME_SUFFIX` keeps the container names apart and gives each instance its own nginx files
+  (`approve-dev-*.conf`).
+- `COMPOSE_PROJECT_NAME` keeps the **databases** apart (Docker volumes `<project>_postgres_data`). Two instances with
+  the same project name share their data.
+- The host ports (`*_PORT` of the services and `*_HOST_PORT` of the databases) must differ, otherwise the second
+  instance does not start.
+- Run `docker compose` commands and `make` only in the folder of the instance you mean.
 
 ---
 
@@ -641,14 +672,14 @@ CONTAINER_NAME_SUFFIX=-dev
 # 1. Backup first!
 bash backup.sh
 
-# 2. Update .env.tmp with new image versions
-nano .env.tmp
+# 2. Set the new image versions in .env (e.g. :4.0.0 -> :4.0.1)
+nano .env
 
 # 3. Pull new images
-docker-compose pull
+docker compose pull
 
 # 4. Restart services
-docker-compose up -d
+docker compose up -d
 ```
 
 ---
@@ -666,7 +697,7 @@ docker-compose up -d
 2. Edit `.env` file with new URLs
 3. Run: `sudo bash generate_nginx_conf.sh`
 4. Run: `sudo certbot --nginx`
-5. Restart: `docker-compose down && docker-compose up -d`
+5. Restart: `docker compose down && docker compose up -d`
 
 ---
 
@@ -708,7 +739,7 @@ docker-compose up -d
 
 If you encounter issues:
 
-1. Check the logs: `docker-compose logs -f`
+1. Check the logs: `docker compose logs -f`
 2. Review the troubleshooting section above
 3. Check GitLab issues
 4. Contact your system administrator

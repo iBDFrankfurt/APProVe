@@ -125,7 +125,7 @@ check_prerequisites() {
     log "🔍 Checking system prerequisites..."
 
     # Check required binaries
-    local required_bins=("docker" "docker-compose" "git" "curl")
+    local required_bins=("docker" "git" "curl")
     for cmd in "${required_bins[@]}"; do
         if ! command -v "$cmd" &> /dev/null; then
             log_error "${cmd} is not installed."
@@ -143,8 +143,13 @@ check_prerequisites() {
     fi
     log "✅ Docker daemon is running."
 
-    # Check Docker Compose version
-    local compose_version=$(docker compose --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    # The script uses the Compose plugin ("docker compose"), not the old standalone docker-compose
+    if ! docker compose version &> /dev/null; then
+        log_error "Docker Compose plugin is not installed ('docker compose' does not work)."
+        log_error "Install it with: sudo apt install docker-compose-plugin"
+        exit 1
+    fi
+    local compose_version=$(docker compose version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
     log_info "Docker Compose version: ${compose_version}"
 
     # Check available memory
@@ -416,7 +421,9 @@ verify_installation() {
         local name="${service%%:*}"
         local port="${service##*:}"
 
-        if docker ps | grep -q "approve.${name}"; then
+        # Exact container name of this instance; no "docker ps | grep -q": with pipefail
+        # grep's early exit makes the pipe fail (SIGPIPE) when many containers run
+        if [ -n "$(docker ps -q --filter "name=^approve\.${name}${CONTAINER_NAME_SUFFIX}\$")" ]; then
             log_info "✅ ${name} is running on port ${port}"
         else
             log_warning "❌ ${name} is not running"

@@ -16,7 +16,7 @@ services:
       - "${AUTH_PORT}:8080"
     entrypoint: >
       /opt/keycloak/bin/kc.sh start 
-      --hostname-url=http://approve.auth:${AUTH_PORT} 
+      --hostname-url=${APPROVE_KEYCLOAK_URL} 
       --hostname-strict=false 
       --http-enabled=true 
       --health-enabled=true
@@ -55,7 +55,10 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - approve_network
+      approve_network:
+        # Same name in the browser and between containers (*.localhost needs no hosts file entry)
+        aliases:
+          - auth.approve.localhost
     logging:
       driver: "json-file"
       options:
@@ -231,7 +234,10 @@ services:
       config-service:
         condition: service_healthy
     networks:
-      - approve_network
+      approve_network:
+        # Same name in the browser and between containers (*.localhost needs no hosts file entry)
+        aliases:
+          - backend.approve.localhost
     logging:
       driver: "json-file"
       options:
@@ -292,7 +298,10 @@ services:
       backend-service:
         condition: service_healthy
     networks:
-      - approve_network
+      approve_network:
+        # Same name in the browser and between containers (*.localhost needs no hosts file entry)
+        aliases:
+          - frontend.approve.localhost
     logging:
       driver: "json-file"
       options:
@@ -336,7 +345,10 @@ services:
       eureka-service:
         condition: service_healthy
     networks:
-      - approve_network
+      approve_network:
+        # Same name in the browser and between containers (*.localhost needs no hosts file entry)
+        aliases:
+          - user.approve.localhost
     logging:
       driver: "json-file"
       options:
@@ -378,7 +390,10 @@ services:
       eureka-service:
         condition: service_healthy
     networks:
-      - approve_network
+      approve_network:
+        # Same name in the browser and between containers (*.localhost needs no hosts file entry)
+        aliases:
+          - comment.approve.localhost
     logging:
       driver: "json-file"
       options:
@@ -421,7 +436,10 @@ services:
       eureka-service:
         condition: service_healthy
     networks:
-      - approve_network
+      approve_network:
+        # Same name in the browser and between containers (*.localhost needs no hosts file entry)
+        aliases:
+          - mails.approve.localhost
     logging:
       driver: "json-file"
       options:
@@ -464,7 +482,10 @@ services:
       eureka-service:
         condition: service_healthy
     networks:
-      - approve_network
+      approve_network:
+        # Same name in the browser and between containers (*.localhost needs no hosts file entry)
+        aliases:
+          - automation.approve.localhost
     logging:
       driver: "json-file"
       options:
@@ -514,7 +535,10 @@ services:
       eureka-service:
         condition: service_healthy
     networks:
-      - approve_network
+      approve_network:
+        # Same name in the browser and between containers (*.localhost needs no hosts file entry)
+        aliases:
+          - import.approve.localhost
     logging:
       driver: "json-file"
       options:

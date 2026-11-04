@@ -42,9 +42,11 @@ development. It is written for people who install APProVe for the first time. If
 
 ### How APProVe is reached
 
-The services talk to each other – and your browser talks to them – via host names like `approve.frontend` or
-`approve.auth`. Your computer only knows these names after you add them to its **hosts file** (step 2). This is
-the most common reason for a failed first installation.
+The services talk to each other – and your browser talks to them – via host names like
+`frontend.approve.localhost` or `auth.approve.localhost`. The same name must work in both places, because Keycloak
+issues login tokens for exactly one address. Names ending in `.localhost` make this work without any setup: browsers
+(Chrome, Edge, Firefox) and curl resolve them to your own computer by themselves, and inside Docker they are network
+aliases of the containers. **You do not need to edit your hosts file.**
 
 ---
 
@@ -57,26 +59,21 @@ git clone https://gitlab.ibdf-frankfurt.de/uct/open-approve.git
 cd open-approve/local-setup
 ```
 
-Git asks for your GitLab username and password (or a Personal Access Token, see step 3). All following commands are
-run in this `local-setup` folder.
+Git asks for your GitLab username and password (or a Personal Access Token with scope `read_repository`, see
+step 3). All following commands are run in this `local-setup` folder.
 
-### Step 2: Add the host names to your hosts file
-
-Add this **one line** at the end of your hosts file:
-
-```text
-127.0.0.1 approve.frontend approve.auth approve.backend approve.user approve.comment approve.mails approve.automation approve.import
-```
-
-- **Windows:** press the Windows key, type `Notepad`, right-click → **Run as administrator**. Then *File → Open*
-  `C:\Windows\System32\drivers\etc\hosts` (set the file filter to "All files"), paste the line, save.
-- **macOS/Linux:** `sudo nano /etc/hosts`, paste the line, save with `Ctrl+O`, `Enter`, `Ctrl+X`.
-
-Check it (the address must be `127.0.0.1`):
+### Step 2: Check the host names (usually nothing to do)
 
 ```bash
-ping -c 1 approve.frontend    # Windows Git Bash: ping -n 1 approve.frontend
+curl -s -o /dev/null -w "%{remote_ip}\n" http://frontend.approve.localhost:1/
 ```
+
+The result `127.0.0.1` or `::1` means everything is fine (the request itself fails – nothing runs yet). If curl
+says *Could not resolve host*, your curl is older than 7.78: update it (on Windows: install a current Git for
+Windows). Safari may not resolve `*.localhost` – use Chrome, Edge or Firefox.
+
+> **Old hosts entries:** earlier versions of this guide used `approve.frontend`, `approve.auth`, … in the hosts file.
+> These entries are no longer used and can be removed.
 
 ### Step 3: Log in to the image registry
 
@@ -121,7 +118,7 @@ If you get `Permission denied`, run `chmod +x install.sh` once.
 
 The script reports every step it completes. What it does:
 
-1. Checks Docker, Docker Compose, Git, curl, free disk space, the hosts file and the registry login
+1. Checks Docker, Docker Compose, Git, curl, free disk space, the host names and the registry login
 2. Checks that all required ports are free
 3. Downloads the Keycloak login theme and the Keycloak event listener into this folder and builds the listener
 4. Downloads the Docker images (the slow part on the first run)
@@ -143,12 +140,12 @@ At the end you see the URLs and login data. The whole output is also written to 
 
 | | |
 |---|---|
-| **APProVe** | http://approve.frontend:8001 |
+| **APProVe** | http://frontend.approve.localhost:8001 |
 | **User** | `approve-admin` |
 | **Password** | `approve-password` |
 
-1. Open http://approve.frontend:8001 – you see the APProVe welcome page.
-2. Click **Anmelden** (top right or in the text). You are forwarded to the Keycloak login page (`approve.auth:8080`).
+1. Open http://frontend.approve.localhost:8001 – you see the APProVe welcome page.
+2. Click **Anmelden** (top right or in the text). You are forwarded to the Keycloak login page (`auth.approve.localhost:8080`).
 3. Log in with the data above. You are sent back to APProVe and see the dashboard.
 
 The user interface is in German. The `approve-admin` user has the role `APPROVE_ADMIN_ROLE` and can see everything,
@@ -158,7 +155,7 @@ Other logins:
 
 | What | URL | Login |
 |---|---|---|
-| Keycloak admin console (users, roles) | http://approve.auth:8080/admin | `adminuser` / `adminpass` |
+| Keycloak admin console (users, roles) | http://auth.approve.localhost:8080/admin | `adminuser` / `adminpass` |
 | User manual | http://localhost:8090/manual/ | – |
 | Eureka (which services are registered) | http://localhost:8761 | – |
 | Service account used by the services | – | `restuser` / `restuser_pass` |
@@ -255,14 +252,15 @@ service. For a full report run `./diagnose.sh`.
 
 ### "These host names do not resolve: …"
 
-The hosts file entry from step 2 is missing or was not saved (on Windows, Notepad must run as administrator).
-Add the line the script prints and run `./install.sh` again.
+Your curl is older than 7.78 and cannot resolve `*.localhost` names (see step 2). Update curl (on Windows: a current
+Git for Windows), or add the line the script prints to your hosts file, then run `./install.sh` again.
 
 ### "Port 5432 (POSTGRES_HOST_PORT) is already in use"
 
 Another program uses the port – usually a locally installed database or another Docker project. Either stop it, or
-change the port in `.env` (see step 4). For the service ports (8000, 8001, 8080, …) stop the other program; changing
-them also requires changing the matching URLs in `.env`.
+change the port in `.env` (see step 4). For the service ports (8000, 8001, 8080, …) stop the other program: they
+cannot simply be changed, because the browser and the containers must use the same address (the port inside the
+container is fixed).
 
 ### "Pulling the images failed" / "pull access denied" / "unauthorized"
 
@@ -293,14 +291,14 @@ was busy. Run `./install.sh` again – it continues where it stopped.
 
 ### The browser shows "This site can't be reached"
 
-1. `ping approve.frontend` must answer from `127.0.0.1` (hosts file, step 2)
+1. Use Chrome, Edge or Firefox (Safari may not resolve `*.localhost`)
 2. `docker compose ps` must show `approve.frontend` as running
 3. The frontend needs about a minute after start; reload the page
 
 ### After login the page stays empty or shows errors
 
-Open the browser console (F12). If requests to `approve.backend`, `approve.user` etc. fail, those host names are
-missing in the hosts file – the browser calls these services directly.
+Open the browser console (F12). The browser calls `backend.approve.localhost`, `user.approve.localhost` etc.
+directly – check whether these requests fail and which service is affected (`docker compose ps`).
 
 ### `/bin/bash^M: bad interpreter`
 
@@ -344,7 +342,8 @@ docker exec approve.mongo mongorestore -u mongo_admin -p mongopass /tmp/backup
 
 ### Can I change the ports or passwords?
 
-Yes, everything is in `.env`. Port changes need the matching URL in `.env` changed as well. Changes to the
+Passwords yes, everything is in `.env`. Of the ports only `POSTGRES_HOST_PORT` and `MONGO_HOST_PORT` can be changed
+freely (see the troubleshooting entry on port conflicts). Changes to the
 Keycloak or admin settings only take effect on a fresh installation (`docker compose down -v`, then `./install.sh`).
 
 ---
