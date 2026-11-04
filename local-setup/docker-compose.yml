@@ -190,6 +190,8 @@ services:
       APPROVE_KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
       APPROVE_KEYCLOAK_SERVER: ${APPROVE_KEYCLOAK_URL}
       APPROVE_CLIENT_ID: ${APPROVE_CLIENT_ID}
+      # Only this Keycloak user (the event listener's REST_USER) may call /api/event/**
+      APPROVE_KEYCLOAK_USER_NAME: ${KEYCLOAK_USER_NAME}
 
       # Eureka Configuration
       APPROVE_EUREKA: ${EUREKA_URL}
