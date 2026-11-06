@@ -418,6 +418,7 @@ services:
       EUREKA_HOST: ${EUREKA_URL}
       EUREKA_SERVICE_NAME: MAIL-SERVICE
       CHECK_TOKEN_URL: ${APPROVE_KEYCLOAK_URL}/realms/${KEYCLOAK_REALM_NAME}/protocol/openid-connect/userinfo
+      BACKEND_URL: http://approve.backend${CONTAINER_NAME_SUFFIX}:8000/api
       IS_LOCAL: "false"
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
     healthcheck:
@@ -462,6 +463,7 @@ services:
       EUREKA_SERVICE_NAME: AUTOMATION-SERVICE
       EUREKA_IP_ADDRESS_FOR_SERVICE: AUTOMATION-SERVICE
       CHECK_TOKEN_URL: ${APPROVE_KEYCLOAK_URL}/realms/${KEYCLOAK_REALM_NAME}/protocol/openid-connect/userinfo
+      BACKEND_URL: http://approve.backend${CONTAINER_NAME_SUFFIX}:8000/api
       IS_LOCAL: "false"
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3233/health || exit 1"]
