@@ -235,7 +235,7 @@ check_service() {
 
 check_service "Frontend" "http://localhost:8001/actuator/health"
 check_service "Backend" "http://localhost:8000/api/actuator/health"
-check_service "Keycloak" "http://localhost:8080/health/live"
+check_service "Keycloak" "http://localhost:8080/realms/master"
 check_service "Eureka" "http://localhost:8761/actuator/health"
 
 echo "" | tee -a "$REPORT_FILE"

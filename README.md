@@ -53,13 +53,13 @@ overview of the ecosystem; the README of each service only describes its own pla
 
 | Repository                   | Eureka name          | Port | Tech Stack                 | Purpose                                                                 |
 |:-----------------------------|:---------------------|:-----|:---------------------------|:------------------------------------------------------------------------|
-| **uct-config-service**       | –                    | 8888 | Spring Boot 3              | Central configuration (Spring Cloud Config, configs in Git submodule)   |
-| **uct-eureka-service**       | –                    | 8761 | Spring Boot 3              | Service discovery and registration                                      |
-| **uct-backend-service**      | `PROJECT-SERVICE`    | 8000 | Spring Boot 3              | Central API: projects, realms, master data, authorization (PostgreSQL)  |
-| **uct-frontend-service**     | `PROJECT-WEB-SERVICE` | 8001 | Spring Boot 3 / Thymeleaf  | Delivers the UI and the Vue.js bundle, backend-for-frontend (BFF)       |
+| **uct-config-service**       | –                    | 8888 | Spring Boot 4              | Central configuration (Spring Cloud Config, configs in Git submodule)   |
+| **uct-eureka-service**       | –                    | 8761 | Spring Boot 4              | Service discovery and registration                                      |
+| **uct-backend-service**      | `PROJECT-SERVICE`    | 8000 | Spring Boot 4              | Central API: projects, realms, master data, authorization (PostgreSQL)  |
+| **uct-frontend-service**     | `PROJECT-WEB-SERVICE` | 8001 | Spring Boot 4 / Thymeleaf  | Delivers the UI and the Vue.js bundle, backend-for-frontend (BFF)       |
 | **uct-vuejs-frontend**       | –                    | –    | Vue.js 2 / Webpack 5       | Vue components, built into `uct-frontend-service`                       |
-| **uct-user-service**         | `USER-SERVICE`       | 9000 | Spring Boot 3              | Users, roles, groups and sessions via the Keycloak Admin API            |
-| **uct-project-import-service** | `PROJECT-IMPORT-SERVICE` | 8003 | Spring Boot 3       | Import/export of project data (JSON, XML, CentraXX), API keys           |
+| **uct-user-service**         | `USER-SERVICE`       | 9000 | Spring Boot 4              | Users, roles, groups and sessions via the Keycloak Admin API            |
+| **uct-project-import-service** | `PROJECT-IMPORT-SERVICE` | 8003 | Spring Boot 4       | Import/export of project data (JSON, XML, CentraXX), API keys           |
 | **uct-email-service**        | `MAIL-SERVICE`       | 4234 | Go                         | Mails, SMTP servers and templates (MongoDB)                             |
 | **uct-comment-service**      | `COMMENT-SERVICE`    | 3234 | Go                         | Project comments (MongoDB)                                              |
 | **uct-automation-service**   | `AUTOMATION-SERVICE` | 3233 | Go                         | Stores automation rules (MongoDB); the backend executes them            |

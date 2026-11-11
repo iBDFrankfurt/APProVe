@@ -298,7 +298,8 @@ start_core_services() {
 
     log_info "Starting Keycloak..."
     docker compose up -d auth
-    wait_for_service "http://localhost:${AUTH_PORT}/health/live" "keycloak" 120 || exit 1
+    # Keycloak 25+ serves /health only on the management port 9000 inside the container
+    wait_for_container "approve.auth${CONTAINER_NAME_SUFFIX}" "Keycloak" 120 || exit 1
 }
 
 #----------------------------------------------------------------------------------
@@ -317,6 +318,10 @@ configure_keycloak_infrastructure() {
         # 1. Create Realm
         echo '[KC] Create realm'
         \$KC create realms -s realm='$KEYCLOAK_REALM_NAME' -s enabled=true -s accountTheme=custom-theme -o || true
+        # Keycloak 24+ drops attributes missing from the user profile; the login theme's
+        # profile form stores title, phone, clinic, ... as such unmanaged attributes
+        echo '[KC] Allow unmanaged user attributes'
+        \$KC update users/profile -r '$KEYCLOAK_REALM_NAME' -s unmanagedAttributePolicy=ENABLED
 
         # 2. Create Client Scope
         echo '[KC] Create OpenID client scope'
@@ -325,10 +330,20 @@ configure_keycloak_infrastructure() {
         # 3. Create Client (Web App)
         echo '[KC] Create APProVe client'
         \$KC create clients -r '$KEYCLOAK_REALM_NAME' -s clientId='$APPROVE_CLIENT_ID' -s rootUrl='$APPROVE_FRONTEND_URL' -s \"redirectUris=[\\\"$APPROVE_FRONTEND_URL/*\\\"]\" -s \"webOrigins=[\\\"$APPROVE_FRONTEND_URL/*\\\"]\" -s publicClient=true -s directAccessGrantsEnabled=true -s attributes.login_theme=custom-theme || true
+        # Keycloak 26.8: the admin REST API needs this scope in the token. The event listener
+        # and the user service log in through this client (as restuser) and call that API.
+        echo '[KC] Add kc-admin-api scope to APProVe client'
+        CID=\$(\$KC get clients -r '$KEYCLOAK_REALM_NAME' -q clientId='$APPROVE_CLIENT_ID' --fields id --format csv --noquotes)
+        SID=\$(\$KC get client-scopes -r '$KEYCLOAK_REALM_NAME' --fields id,name --format csv --noquotes | grep ',kc-admin-api\$' | cut -d, -f1)
+        \$KC update clients/\$CID/default-client-scopes/\$SID -r '$KEYCLOAK_REALM_NAME'
 
         # 4. Create Service User (restuser) - Required for Backend to start
         echo '[KC] Create service user (restuser)'
         \$KC create users -r '$KEYCLOAK_REALM_NAME' -s username='$KEYCLOAK_USER_NAME' -s enabled=true -s emailVerified=true || true
+        # Keycloak 24+ refuses the password login ('Account is not fully set up') while
+        # name or e-mail are missing; set them on every run so older installs get them too
+        RID=\$(\$KC get users -r '$KEYCLOAK_REALM_NAME' -q exact=true -q username='$KEYCLOAK_USER_NAME' --fields id --format csv --noquotes)
+        \$KC update users/\$RID -r '$KEYCLOAK_REALM_NAME' -s firstName=APProVe -s lastName=Service -s email='$KEYCLOAK_USER_NAME@approve.localhost'
 
         echo '[KC] Set service user password'
         \$KC set-password -r '$KEYCLOAK_REALM_NAME' --username '$KEYCLOAK_USER_NAME' --new-password '$KEYCLOAK_USER_PASSWORD'

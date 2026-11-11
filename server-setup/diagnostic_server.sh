@@ -215,7 +215,7 @@ check_local_service() {
 # Check based on standard ports defined in Nginx generator
 check_local_service "Frontend" "8001" "/actuator/health"
 check_local_service "Backend" "8000" "/api/actuator/health"
-check_local_service "Keycloak" "8080" "/health"
+check_local_service "Keycloak" "8080" "/realms/master"
 check_local_service "Eureka" "8761" "/actuator/health"
 
 echo "" | tee -a "$REPORT_FILE"

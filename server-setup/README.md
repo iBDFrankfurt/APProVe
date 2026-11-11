@@ -559,7 +559,7 @@ docker exec -it approve.mongo mongosh -u mongo_admin -p mongopass
 curl https://backend.example.com/api/actuator/health
 
 # Keycloak health
-curl https://auth.example.com/health
+curl https://auth.example.com/realms/master
 
 # Frontend health
 curl https://approve.example.com/actuator/health

@@ -68,7 +68,6 @@ health: ## Check health of the core services
 	@for check in \
 		"Frontend|http://localhost:8001/actuator/health" \
 		"Backend|http://localhost:8000/api/actuator/health" \
-		"Keycloak|http://localhost:8080/health/live" \
 		"Eureka|http://localhost:8761/actuator/health" \
 		"User|http://localhost:9001/api/health" \
 		"Import|http://localhost:8003/api/v1/actuator/health"; do \
@@ -76,6 +75,9 @@ health: ## Check health of the core services
 		if curl -s "$$url" | grep -q "UP"; then printf "$(GREEN)OK  $(NC) %-9s %s\n" "$$name" "$$url"; \
 		else printf "$(RED)FAIL$(NC) %-9s %s\n" "$$name" "$$url"; fi; \
 	done
+	@# Keycloak 25+ serves /health only on its management port 9000, which is not published
+	@if [ "$$(docker inspect -f '{{.State.Health.Status}}' approve.auth 2>/dev/null)" = healthy ]; then printf "$(GREEN)OK  $(NC) %-9s %s\n" Keycloak "container health"; \
+	else printf "$(RED)FAIL$(NC) %-9s %s\n" Keycloak "container health"; fi
 
 logs: ## Show logs for all services (follow mode)
 	@$(COMPOSE) logs -f
